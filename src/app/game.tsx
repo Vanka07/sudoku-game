@@ -62,12 +62,34 @@ function SudokuCell({
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
   const scale = useSharedValue(1);
+  const correctPulse = useSharedValue(1);
+  const correctGlow = useSharedValue(0);
 
   const isBoxBorderRight = col === 2 || col === 5;
   const isBoxBorderBottom = row === 2 || row === 5;
 
+  // Trigger pulse animation when cell becomes correct
+  useEffect(() => {
+    if (cell.isCorrect && !cell.isGiven) {
+      // Pulse animation for correct answer
+      correctPulse.value = withSequence(
+        withTiming(1.15, { duration: 150, easing: Easing.out(Easing.ease) }),
+        withSpring(1, { damping: 12, stiffness: 200 })
+      );
+      // Glow effect
+      correctGlow.value = withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(0, { duration: 400 })
+      );
+    }
+  }, [cell.isCorrect]);
+
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value * correctPulse.value }],
+  }));
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: correctGlow.value * 0.3,
   }));
 
   const handlePress = () => {
@@ -89,6 +111,8 @@ function SudokuCell({
 
   const textColor = cell.isError
     ? colors.cellErrorText
+    : cell.isCorrect && !cell.isGiven
+    ? colors.cellCorrectText
     : cell.isGiven
     ? colors.cellGivenText
     : colors.cellInputText;
@@ -112,6 +136,21 @@ function SudokuCell({
       ]}
       onPress={handlePress}
     >
+      {/* Glow effect for correct answers */}
+      {cell.isCorrect && !cell.isGiven && (
+        <Animated.View
+          style={[
+            glowStyle,
+            {
+              position: 'absolute',
+              width: CELL_SIZE - 4,
+              height: CELL_SIZE - 4,
+              borderRadius: 8,
+              backgroundColor: colors.cellCorrectText,
+            },
+          ]}
+        />
+      )}
       {cell.value !== 0 ? (
         <Text
           style={{

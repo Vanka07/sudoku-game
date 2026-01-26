@@ -65,6 +65,7 @@ export const themes = {
     cellGivenText: '#FFFFFF',
     cellInputText: '#818CF8',
     cellErrorText: '#EF4444',
+    cellCorrectText: '#4ADE80',
     gradient: ['#6366F1', '#8B5CF6'] as [string, string],
   },
   light: {
@@ -89,6 +90,7 @@ export const themes = {
     cellGivenText: '#1E293B',
     cellInputText: '#6366F1',
     cellErrorText: '#DC2626',
+    cellCorrectText: '#22C55E',
     gradient: ['#6366F1', '#8B5CF6'] as [string, string],
   },
 };

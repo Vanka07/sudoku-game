@@ -8,6 +8,7 @@ export interface Cell {
   isGiven: boolean; // Original puzzle clue
   notes: number[]; // Pencil marks
   isError: boolean;
+  isCorrect: boolean; // User entered correct number
   isHighlighted: boolean;
 }
 
@@ -272,6 +273,7 @@ function createEmptyBoard(): Cell[][] {
       isGiven: false,
       notes: [],
       isError: false,
+      isCorrect: false,
       isHighlighted: false,
     }))
   );
@@ -284,6 +286,7 @@ function initializeBoardFromPuzzle(puzzle: number[][]): Cell[][] {
       isGiven: value !== 0,
       notes: [],
       isError: false,
+      isCorrect: false,
       isHighlighted: false,
     }))
   );
@@ -380,6 +383,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       // Check if correct
       if (num !== solution[row][col]) {
         newBoard[row][col].isError = true;
+        newBoard[row][col].isCorrect = false;
         const newMistakes = mistakes + 1;
 
         if (newMistakes >= maxMistakes) {
@@ -392,6 +396,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
         return;
       } else {
         newBoard[row][col].isError = false;
+        newBoard[row][col].isCorrect = true;
 
         // Remove this number from notes in same row/col/box
         for (let i = 0; i < 9; i++) {
