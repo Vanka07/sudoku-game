@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSudokuStore, DIFFICULTY_CONFIG, Cell } from '@/lib/sudokuStore';
+import { useThemeStore, themes } from '@/lib/themeStore';
 
 const { width } = Dimensions.get('window');
 const BOARD_PADDING = 16;
@@ -50,6 +51,8 @@ function SudokuCell({
   sameValue: boolean;
   onPress: () => void;
 }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
   const scale = useSharedValue(1);
 
   const isBoxBorderRight = col === 2 || col === 5;
@@ -69,18 +72,18 @@ function SudokuCell({
   };
 
   const bgColor = isSelected
-    ? 'rgba(99, 102, 241, 0.35)'
+    ? colors.cellSelectedBg
     : cell.isHighlighted
-    ? 'rgba(99, 102, 241, 0.12)'
+    ? colors.cellHighlightBg
     : sameValue && cell.value !== 0
-    ? 'rgba(99, 102, 241, 0.2)'
+    ? colors.cellSelectedBg
     : 'transparent';
 
   const textColor = cell.isError
-    ? '#EF4444'
+    ? colors.cellErrorText
     : cell.isGiven
-    ? '#FFFFFF'
-    : '#818CF8';
+    ? colors.cellGivenText
+    : colors.cellInputText;
 
   return (
     <AnimatedPressable
@@ -92,7 +95,9 @@ function SudokuCell({
           backgroundColor: bgColor,
           borderRightWidth: isBoxBorderRight ? 2 : 0.5,
           borderBottomWidth: isBoxBorderBottom ? 2 : 0.5,
-          borderColor: isBoxBorderRight || isBoxBorderBottom ? '#4B5563' : '#1F2937',
+          borderColor: isBoxBorderRight || isBoxBorderBottom
+            ? colors.textDim
+            : theme === 'dark' ? '#1F2937' : '#E5E7EB',
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -126,7 +131,7 @@ function SudokuCell({
                   style={{
                     fontFamily: 'Rajdhani_500Medium',
                     fontSize: 10,
-                    color: '#6B7280',
+                    color: colors.textMuted,
                   }}
                 >
                   {n}
@@ -144,6 +149,8 @@ function SudokuBoard() {
   const board = useSudokuStore((s) => s.board);
   const selectedCell = useSudokuStore((s) => s.selectedCell);
   const selectCell = useSudokuStore((s) => s.selectCell);
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
 
   const selectedValue = selectedCell
     ? board[selectedCell.row][selectedCell.col].value
@@ -155,10 +162,10 @@ function SudokuBoard() {
       style={{
         width: BOARD_SIZE,
         height: BOARD_SIZE,
-        backgroundColor: '#111318',
+        backgroundColor: theme === 'dark' ? '#111318' : '#FFFFFF',
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#4B5563',
+        borderColor: colors.textDim,
         overflow: 'hidden',
       }}
     >
@@ -192,6 +199,8 @@ function NumberButton({
   onPress: () => void;
   count: number;
 }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
   const scale = useSharedValue(1);
   const isDisabled = count >= 9;
 
@@ -217,13 +226,13 @@ function NumberButton({
           width: (width - 64) / 9 - 2,
           height: 56,
           backgroundColor: isDisabled
-            ? 'rgba(255, 255, 255, 0.02)'
-            : 'rgba(99, 102, 241, 0.1)',
+            ? colors.backgroundSecondary
+            : colors.accentBg,
           borderRadius: 12,
           borderWidth: 1,
           borderColor: isDisabled
-            ? 'rgba(255, 255, 255, 0.03)'
-            : 'rgba(99, 102, 241, 0.3)',
+            ? colors.borderLight
+            : colors.accentBorder,
           opacity: isDisabled ? 0.3 : 1,
         }}
       >
@@ -231,7 +240,7 @@ function NumberButton({
           style={{
             fontFamily: 'Rajdhani_700Bold',
             fontSize: 26,
-            color: isDisabled ? '#374151' : '#818CF8',
+            color: isDisabled ? colors.textDimmer : colors.accentLight,
           }}
         >
           {num}
@@ -286,6 +295,8 @@ function ActionButton({
   isActive?: boolean;
   badge?: number;
 }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -307,19 +318,19 @@ function ActionButton({
         className="w-14 h-14 rounded-2xl items-center justify-center relative"
         style={{
           backgroundColor: isActive
-            ? 'rgba(99, 102, 241, 0.2)'
-            : 'rgba(255, 255, 255, 0.04)',
+            ? colors.accentBg
+            : colors.backgroundSecondary,
           borderWidth: 1,
           borderColor: isActive
-            ? 'rgba(99, 102, 241, 0.4)'
-            : 'rgba(255, 255, 255, 0.08)',
+            ? colors.accentBorder
+            : colors.border,
         }}
       >
         {icon}
         {badge !== undefined && badge > 0 && (
           <View
             className="absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center"
-            style={{ backgroundColor: '#6366F1' }}
+            style={{ backgroundColor: colors.accent }}
           >
             <Text
               style={{
@@ -337,7 +348,7 @@ function ActionButton({
         style={{
           fontFamily: 'Rajdhani_500Medium',
           fontSize: 11,
-          color: isActive ? '#818CF8' : '#6B7280',
+          color: isActive ? colors.accentLight : colors.textMuted,
           marginTop: 6,
         }}
       >
@@ -353,6 +364,8 @@ function ActionBar() {
   const clearCell = useSudokuStore((s) => s.clearCell);
   const useHint = useSudokuStore((s) => s.useHint);
   const hintsRemaining = useSudokuStore((s) => s.hintsRemaining);
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
 
   return (
     <Animated.View
@@ -360,13 +373,13 @@ function ActionBar() {
       className="flex-row justify-center mt-6"
     >
       <ActionButton
-        icon={<Pencil size={22} color={noteMode ? '#818CF8' : '#6B7280'} />}
+        icon={<Pencil size={22} color={noteMode ? colors.accentLight : colors.textMuted} />}
         label="Notes"
         onPress={toggleNoteMode}
         isActive={noteMode}
       />
       <ActionButton
-        icon={<Eraser size={22} color="#6B7280" />}
+        icon={<Eraser size={22} color={colors.textMuted} />}
         label="Erase"
         onPress={clearCell}
       />
@@ -390,6 +403,8 @@ function Header() {
   const pauseGame = useSudokuStore((s) => s.pauseGame);
   const resumeGame = useSudokuStore((s) => s.resumeGame);
   const insets = useSafeAreaInsets();
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
 
   const config = DIFFICULTY_CONFIG[difficulty];
 
@@ -402,9 +417,9 @@ function Header() {
             router.back();
           }}
           className="w-10 h-10 rounded-full items-center justify-center"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+          style={{ backgroundColor: colors.backgroundSecondary }}
         >
-          <Home size={20} color="#6B7280" />
+          <Home size={20} color={colors.textMuted} />
         </Pressable>
 
         <View className="flex-row items-center">
@@ -428,7 +443,7 @@ function Header() {
             style={{
               fontFamily: 'Rajdhani_600SemiBold',
               fontSize: 18,
-              color: '#FFFFFF',
+              color: colors.text,
               letterSpacing: 1,
             }}
           >
@@ -442,9 +457,9 @@ function Header() {
             isPaused ? resumeGame() : pauseGame();
           }}
           className="w-10 h-10 rounded-full items-center justify-center"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+          style={{ backgroundColor: colors.backgroundSecondary }}
         >
-          <Pause size={20} color="#6B7280" />
+          <Pause size={20} color={colors.textMuted} />
         </Pressable>
       </View>
 
@@ -457,7 +472,7 @@ function Header() {
               key={i}
               className="w-2 h-2 rounded-full mx-1"
               style={{
-                backgroundColor: i < mistakes ? '#EF4444' : 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: i < mistakes ? '#EF4444' : colors.border,
               }}
             />
           ))}
@@ -469,6 +484,8 @@ function Header() {
 function PauseOverlay() {
   const isPaused = useSudokuStore((s) => s.isPaused);
   const resumeGame = useSudokuStore((s) => s.resumeGame);
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
 
   if (!isPaused) return null;
 
@@ -476,7 +493,7 @@ function PauseOverlay() {
     <Animated.View
       entering={FadeIn.duration(200)}
       className="absolute inset-0 items-center justify-center"
-      style={{ backgroundColor: 'rgba(10, 10, 15, 0.95)' }}
+      style={{ backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.95)' : 'rgba(248, 250, 252, 0.95)' }}
     >
       <Pressable
         onPress={() => {
@@ -488,18 +505,18 @@ function PauseOverlay() {
         <View
           className="w-24 h-24 rounded-full items-center justify-center mb-6"
           style={{
-            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+            backgroundColor: colors.accentBg,
             borderWidth: 2,
-            borderColor: 'rgba(99, 102, 241, 0.3)',
+            borderColor: colors.accentBorder,
           }}
         >
-          <Pause size={40} color="#818CF8" />
+          <Pause size={40} color={colors.accentLight} />
         </View>
         <Text
           style={{
             fontFamily: 'Rajdhani_700Bold',
             fontSize: 28,
-            color: '#FFFFFF',
+            color: colors.text,
             letterSpacing: 2,
           }}
         >
@@ -509,7 +526,7 @@ function PauseOverlay() {
           style={{
             fontFamily: 'Rajdhani_400Regular',
             fontSize: 14,
-            color: '#6B7280',
+            color: colors.textMuted,
             marginTop: 8,
           }}
         >
@@ -528,6 +545,8 @@ function VictoryModal() {
   const elapsedTime = useSudokuStore((s) => s.elapsedTime);
   const difficulty = useSudokuStore((s) => s.difficulty);
   const startNewGame = useSudokuStore((s) => s.startNewGame);
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
 
   const isGameOver = mistakes >= maxMistakes;
 
@@ -537,7 +556,7 @@ function VictoryModal() {
     <Animated.View
       entering={FadeIn.duration(300)}
       className="absolute inset-0 items-center justify-center px-8"
-      style={{ backgroundColor: 'rgba(10, 10, 15, 0.97)' }}
+      style={{ backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.97)' : 'rgba(248, 250, 252, 0.97)' }}
     >
       <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center">
         <Text
@@ -558,7 +577,7 @@ function VictoryModal() {
               style={{
                 fontFamily: 'Rajdhani_500Medium',
                 fontSize: 16,
-                color: '#6B7280',
+                color: colors.textMuted,
                 marginBottom: 24,
               }}
             >
@@ -571,7 +590,7 @@ function VictoryModal() {
                   style={{
                     fontFamily: 'Rajdhani_700Bold',
                     fontSize: 32,
-                    color: '#FFFFFF',
+                    color: colors.text,
                   }}
                 >
                   {formatTime(elapsedTime)}
@@ -580,7 +599,7 @@ function VictoryModal() {
                   style={{
                     fontFamily: 'Rajdhani_400Regular',
                     fontSize: 12,
-                    color: '#6B7280',
+                    color: colors.textMuted,
                   }}
                 >
                   TIME
@@ -591,7 +610,7 @@ function VictoryModal() {
                   style={{
                     fontFamily: 'Rajdhani_700Bold',
                     fontSize: 32,
-                    color: '#FFFFFF',
+                    color: colors.text,
                   }}
                 >
                   {mistakes}
@@ -600,7 +619,7 @@ function VictoryModal() {
                   style={{
                     fontFamily: 'Rajdhani_400Regular',
                     fontSize: 12,
-                    color: '#6B7280',
+                    color: colors.textMuted,
                   }}
                 >
                   MISTAKES
@@ -618,16 +637,16 @@ function VictoryModal() {
             }}
             className="px-8 py-4 rounded-xl mr-3"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: colors.backgroundSecondary,
               borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderColor: colors.border,
             }}
           >
             <Text
               style={{
                 fontFamily: 'Rajdhani_600SemiBold',
                 fontSize: 16,
-                color: '#9CA3AF',
+                color: colors.textSecondary,
               }}
             >
               HOME
@@ -641,7 +660,7 @@ function VictoryModal() {
             }}
             className="px-8 py-4 rounded-xl"
             style={{
-              backgroundColor: '#6366F1',
+              backgroundColor: colors.accent,
             }}
           >
             <Text
@@ -664,6 +683,8 @@ export default function GameScreen() {
   const isPlaying = useSudokuStore((s) => s.isPlaying);
   const isPaused = useSudokuStore((s) => s.isPaused);
   const updateTime = useSudokuStore((s) => s.updateTime);
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -683,7 +704,7 @@ export default function GameScreen() {
   }, [isPlaying, isPaused]);
 
   return (
-    <View className="flex-1 bg-[#0A0A0F]">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <Header />
 
       <View className="flex-1 items-center justify-center">

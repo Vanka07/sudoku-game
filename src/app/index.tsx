@@ -3,7 +3,7 @@ import { View, Text, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Grid3x3, Trophy, Clock, Flame, ChevronRight } from 'lucide-react-native';
+import { Grid3x3, Trophy, Clock, Flame, ChevronRight, Sun, Moon } from 'lucide-react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -18,12 +18,56 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSudokuStore, DIFFICULTY_CONFIG, Difficulty } from '@/lib/sudokuStore';
+import { useThemeStore, themes } from '@/lib/themeStore';
 
 const { width } = Dimensions.get('window');
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+function ThemeToggle() {
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const colors = themes[theme];
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withTiming(0.9, { duration: 50 }),
+      withSpring(1, { damping: 15 })
+    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleTheme();
+  };
+
+  return (
+    <Animated.View entering={FadeInDown.delay(50).springify()} className="absolute top-4 right-4">
+      <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+        <View
+          className="w-11 h-11 rounded-full items-center justify-center"
+          style={{
+            backgroundColor: colors.backgroundSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          {theme === 'dark' ? (
+            <Sun size={20} color={colors.textSecondary} />
+          ) : (
+            <Moon size={20} color={colors.textSecondary} />
+          )}
+        </View>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
+
 function FloatingGrid({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
   const opacity = useSharedValue(0.03);
   const rotate = useSharedValue(0);
 
@@ -75,7 +119,7 @@ function FloatingGrid({ delay, x, y, size }: { delay: number; x: number; y: numb
               width: size / 3,
               height: size / 3,
               borderWidth: 0.5,
-              borderColor: '#6366F1',
+              borderColor: colors.accent,
             }}
           />
         ))}
@@ -85,25 +129,28 @@ function FloatingGrid({ delay, x, y, size }: { delay: number; x: number; y: numb
 }
 
 function Logo() {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
+
   return (
     <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center mb-2">
       <View className="flex-row items-center justify-center mb-3">
         <View
           className="w-16 h-16 rounded-2xl items-center justify-center"
           style={{
-            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+            backgroundColor: colors.accentBg,
             borderWidth: 1,
-            borderColor: 'rgba(99, 102, 241, 0.3)',
+            borderColor: colors.accentBorder,
           }}
         >
-          <Grid3x3 size={32} color="#818CF8" strokeWidth={1.5} />
+          <Grid3x3 size={32} color={colors.accentLight} strokeWidth={1.5} />
         </View>
       </View>
       <Text
         style={{
           fontFamily: 'Rajdhani_700Bold',
           fontSize: 42,
-          color: '#FFFFFF',
+          color: colors.text,
           letterSpacing: 6,
         }}
       >
@@ -113,7 +160,7 @@ function Logo() {
         style={{
           fontFamily: 'Rajdhani_400Regular',
           fontSize: 14,
-          color: '#6B7280',
+          color: colors.textMuted,
           letterSpacing: 8,
           marginTop: -4,
         }}
@@ -136,6 +183,8 @@ function DifficultyButton({
   delay: number;
 }) {
   const config = DIFFICULTY_CONFIG[difficulty];
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -157,9 +206,9 @@ function DifficultyButton({
         <View
           className="px-6 py-4 rounded-2xl flex-row items-center justify-between"
           style={{
-            backgroundColor: isSelected ? `${config.color}15` : 'rgba(255, 255, 255, 0.03)',
+            backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
-            borderColor: isSelected ? `${config.color}50` : 'rgba(255, 255, 255, 0.06)',
+            borderColor: isSelected ? `${config.color}50` : colors.border,
             width: width - 64,
           }}
         >
@@ -172,14 +221,14 @@ function DifficultyButton({
               style={{
                 fontFamily: 'Rajdhani_600SemiBold',
                 fontSize: 18,
-                color: isSelected ? config.color : '#9CA3AF',
+                color: isSelected ? config.color : colors.textSecondary,
                 letterSpacing: 1,
               }}
             >
               {config.label}
             </Text>
           </View>
-          <ChevronRight size={20} color={isSelected ? config.color : '#4B5563'} />
+          <ChevronRight size={20} color={isSelected ? config.color : colors.textDim} />
         </View>
       </AnimatedPressable>
     </Animated.View>
@@ -258,14 +307,17 @@ function StatCard({
   icon: React.ReactNode;
   delay: number;
 }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
+
   return (
     <Animated.View entering={FadeInUp.delay(delay).springify()} className="flex-1 mx-1.5">
       <View
         className="rounded-2xl p-4 items-center"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+          backgroundColor: colors.backgroundSecondary,
           borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.05)',
+          borderColor: colors.borderLight,
         }}
       >
         <View className="mb-2">{icon}</View>
@@ -273,7 +325,7 @@ function StatCard({
           style={{
             fontFamily: 'Rajdhani_700Bold',
             fontSize: 22,
-            color: '#FFFFFF',
+            color: colors.text,
           }}
         >
           {value}
@@ -282,7 +334,7 @@ function StatCard({
           style={{
             fontFamily: 'Rajdhani_400Regular',
             fontSize: 11,
-            color: '#6B7280',
+            color: colors.textMuted,
             letterSpacing: 1,
           }}
         >
@@ -307,9 +359,13 @@ export default function HomeScreen() {
   const startNewGame = useSudokuStore((s) => s.startNewGame);
   const stats = useSudokuStore((s) => s.stats);
   const loadStats = useSudokuStore((s) => s.loadStats);
+  const theme = useThemeStore((s) => s.theme);
+  const loadTheme = useThemeStore((s) => s.loadTheme);
+  const colors = themes[theme];
 
   useEffect(() => {
     loadStats();
+    loadTheme();
   }, []);
 
   const handleStartGame = () => {
@@ -320,7 +376,12 @@ export default function HomeScreen() {
   const difficulties: Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
 
   return (
-    <View className="flex-1 bg-[#0A0A0F]">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      {/* Theme Toggle */}
+      <SafeAreaView className="absolute top-0 right-0 z-10">
+        <ThemeToggle />
+      </SafeAreaView>
+
       {/* Floating decorative grids */}
       <FloatingGrid delay={0} x={-40} y={80} size={120} />
       <FloatingGrid delay={500} x={width - 80} y={200} size={100} />
@@ -341,7 +402,7 @@ export default function HomeScreen() {
               style={{
                 fontFamily: 'Rajdhani_500Medium',
                 fontSize: 12,
-                color: '#4B5563',
+                color: colors.textDim,
                 letterSpacing: 4,
                 textAlign: 'center',
                 marginBottom: 16,
@@ -397,7 +458,7 @@ export default function HomeScreen() {
             style={{
               fontFamily: 'Rajdhani_400Regular',
               fontSize: 12,
-              color: '#374151',
+              color: colors.textDimmer,
               textAlign: 'center',
             }}
           >
