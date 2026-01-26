@@ -387,47 +387,50 @@ export default function HomeScreen() {
           <ThemeToggle />
         </View>
 
-        <View className="flex-1 items-center px-8" style={{ paddingTop: 8 }}>
-          {/* Logo */}
-          <Logo />
+        <View className="flex-1 items-center justify-between px-8 pb-4">
+          {/* Top section with Logo */}
+          <View className="items-center">
+            {/* Logo */}
+            <Logo />
 
-          {/* Spacer */}
-          <View className="h-6" />
+            {/* Spacer */}
+            <View className="h-4" />
 
-          {/* Difficulty Selection */}
-          <Animated.View entering={FadeInDown.delay(200).springify()} className="mb-2">
-            <Text
-              style={{
-                fontFamily: 'Rajdhani_500Medium',
-                fontSize: 12,
-                color: colors.textDim,
-                letterSpacing: 4,
-                textAlign: 'center',
-                marginBottom: 16,
-              }}
-            >
-              SELECT DIFFICULTY
-            </Text>
-          </Animated.View>
+            {/* Difficulty Selection */}
+            <Animated.View entering={FadeInDown.delay(200).springify()} className="mb-2">
+              <Text
+                style={{
+                  fontFamily: 'Rajdhani_500Medium',
+                  fontSize: 12,
+                  color: colors.textDim,
+                  letterSpacing: 4,
+                  textAlign: 'center',
+                  marginBottom: 12,
+                }}
+              >
+                SELECT DIFFICULTY
+              </Text>
+            </Animated.View>
 
-          <View className="space-y-3 mb-8">
-            {difficulties.map((diff, index) => (
-              <DifficultyButton
-                key={diff}
-                difficulty={diff}
-                isSelected={difficulty === diff}
-                onSelect={() => setDifficulty(diff)}
-                delay={250 + index * 50}
-              />
-            ))}
+            <View className="space-y-3 mb-6">
+              {difficulties.map((diff, index) => (
+                <DifficultyButton
+                  key={diff}
+                  difficulty={diff}
+                  isSelected={difficulty === diff}
+                  onSelect={() => setDifficulty(diff)}
+                  delay={250 + index * 50}
+                />
+              ))}
+            </View>
+
+            {/* Play Button */}
+            <View className="mb-6">
+              <PlayButton onPress={handleStartGame} />
+            </View>
           </View>
 
-          {/* Play Button */}
-          <View className="mb-10">
-            <PlayButton onPress={handleStartGame} />
-          </View>
-
-          {/* Stats */}
+          {/* Stats at bottom */}
           <View className="w-full flex-row px-2">
             <StatCard
               label="Games Won"
