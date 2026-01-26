@@ -4,6 +4,12 @@ A clean, elegant Sudoku puzzle game with dark/light themes and smooth animations
 
 ## Features
 
+### Daily Challenge
+- **Same puzzle for everyone** each day
+- **Daily streak tracking** - maintain your streak by playing every day
+- **Completion status** - see when you've already finished today's puzzle
+- Medium difficulty for consistent challenge
+
 ### Game Modes
 - **Easy**: 35 cells removed - great for beginners
 - **Medium**: 45 cells removed - balanced challenge
@@ -38,6 +44,7 @@ A clean, elegant Sudoku puzzle game with dark/light themes and smooth animations
 - Games won
 - Best time per difficulty
 - Current win streak
+- Daily challenge streak
 
 ## App Structure
 
@@ -45,10 +52,10 @@ A clean, elegant Sudoku puzzle game with dark/light themes and smooth animations
 src/
   app/
     _layout.tsx    # Root layout with fonts
-    index.tsx      # Home screen with difficulty selection
+    index.tsx      # Home screen with daily challenge & difficulty selection
     game.tsx       # Sudoku game board and controls
   lib/
-    sudokuStore.ts # Zustand store with puzzle generation
+    sudokuStore.ts # Zustand store with puzzle generation & daily challenge
     themeStore.ts  # Theme state management
 ```
 

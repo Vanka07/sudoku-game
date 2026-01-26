@@ -3,7 +3,7 @@ import { View, Text, Pressable, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Grid3x3, Trophy, Clock, Flame, ChevronRight, Sun, Moon } from 'lucide-react-native';
+import { Grid3x3, Trophy, Clock, Flame, ChevronRight, Sun, Moon, Calendar, CheckCircle2, Zap } from 'lucide-react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -350,13 +350,146 @@ function formatTime(seconds: number | null): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+function getDayNumber(): number {
+  const now = new Date();
+  const start = new Date(2024, 0, 1);
+  return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function DailyChallengeCard({ onPress }: { onPress: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
+  const dailyChallenge = useSudokuStore((s) => s.dailyChallenge);
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    if (dailyChallenge.completed) return;
+    scale.value = withSequence(
+      withTiming(0.97, { duration: 50 }),
+      withSpring(1, { damping: 15 })
+    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  };
+
+  const dayNumber = getDayNumber();
+
+  return (
+    <Animated.View entering={FadeInDown.delay(150).springify()}>
+      <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+        <LinearGradient
+          colors={dailyChallenge.completed
+            ? (theme === 'dark' ? ['#064E3B', '#065F46'] : ['#D1FAE5', '#A7F3D0'])
+            : (theme === 'dark' ? ['#312E81', '#3730A3'] : ['#E0E7FF', '#C7D2FE'])
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            width: width - 64,
+            padding: 16,
+            borderRadius: 16,
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: dailyChallenge.completed
+              ? (theme === 'dark' ? '#10B981' : '#34D399')
+              : (theme === 'dark' ? '#6366F1' : '#818CF8'),
+          }}
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center flex-1">
+              <View
+                className="w-12 h-12 rounded-xl items-center justify-center mr-3"
+                style={{
+                  backgroundColor: dailyChallenge.completed
+                    ? (theme === 'dark' ? '#10B98130' : '#10B98120')
+                    : (theme === 'dark' ? '#6366F130' : '#6366F120'),
+                }}
+              >
+                {dailyChallenge.completed ? (
+                  <CheckCircle2 size={24} color={theme === 'dark' ? '#10B981' : '#059669'} />
+                ) : (
+                  <Calendar size={24} color={theme === 'dark' ? '#818CF8' : '#6366F1'} />
+                )}
+              </View>
+              <View className="flex-1">
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_700Bold',
+                    fontSize: 16,
+                    color: dailyChallenge.completed
+                      ? (theme === 'dark' ? '#10B981' : '#059669')
+                      : (theme === 'dark' ? '#E0E7FF' : '#3730A3'),
+                    letterSpacing: 1,
+                  }}
+                >
+                  DAILY CHALLENGE
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_500Medium',
+                    fontSize: 13,
+                    color: dailyChallenge.completed
+                      ? (theme === 'dark' ? '#6EE7B7' : '#047857')
+                      : (theme === 'dark' ? '#A5B4FC' : '#4F46E5'),
+                  }}
+                >
+                  {dailyChallenge.completed
+                    ? `Completed in ${formatTime(dailyChallenge.bestTime)}`
+                    : `Day ${dayNumber} • Medium`
+                  }
+                </Text>
+              </View>
+            </View>
+
+            {/* Streak badge */}
+            {dailyChallenge.streak > 0 && (
+              <View
+                className="flex-row items-center px-3 py-1.5 rounded-full"
+                style={{
+                  backgroundColor: theme === 'dark' ? '#F59E0B20' : '#FEF3C7',
+                }}
+              >
+                <Zap size={14} color="#F59E0B" fill="#F59E0B" />
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_700Bold',
+                    fontSize: 14,
+                    color: '#F59E0B',
+                    marginLeft: 4,
+                  }}
+                >
+                  {dailyChallenge.streak}
+                </Text>
+              </View>
+            )}
+
+            {!dailyChallenge.completed && (
+              <ChevronRight
+                size={20}
+                color={theme === 'dark' ? '#818CF8' : '#6366F1'}
+                style={{ marginLeft: 8 }}
+              />
+            )}
+          </View>
+        </LinearGradient>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const difficulty = useSudokuStore((s) => s.difficulty);
   const setDifficulty = useSudokuStore((s) => s.setDifficulty);
   const startNewGame = useSudokuStore((s) => s.startNewGame);
+  const startDailyChallenge = useSudokuStore((s) => s.startDailyChallenge);
   const stats = useSudokuStore((s) => s.stats);
   const loadStats = useSudokuStore((s) => s.loadStats);
+  const loadDailyChallenge = useSudokuStore((s) => s.loadDailyChallenge);
   const theme = useThemeStore((s) => s.theme);
   const loadTheme = useThemeStore((s) => s.loadTheme);
   const colors = themes[theme];
@@ -364,10 +497,16 @@ export default function HomeScreen() {
   useEffect(() => {
     loadStats();
     loadTheme();
+    loadDailyChallenge();
   }, []);
 
   const handleStartGame = () => {
     startNewGame(difficulty);
+    router.push('/game');
+  };
+
+  const handleStartDailyChallenge = () => {
+    startDailyChallenge();
     router.push('/game');
   };
 
@@ -397,6 +536,9 @@ export default function HomeScreen() {
 
             {/* Spacer */}
             <View className="h-4" />
+
+            {/* Daily Challenge Card */}
+            <DailyChallengeCard onPress={handleStartDailyChallenge} />
 
             {/* Difficulty Selection */}
             <Animated.View entering={FadeInDown.delay(200).springify()} className="mb-2">

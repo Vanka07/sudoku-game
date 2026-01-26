@@ -11,6 +11,14 @@ export interface Cell {
   isHighlighted: boolean;
 }
 
+export interface DailyChallenge {
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  bestTime: number | null;
+  streak: number;
+  lastCompletedDate: string | null;
+}
+
 export interface GameState {
   board: Cell[][];
   solution: number[][];
@@ -24,6 +32,8 @@ export interface GameState {
   hintsRemaining: number;
   elapsedTime: number;
   noteMode: boolean;
+  isDailyChallenge: boolean;
+  dailyChallenge: DailyChallenge;
   stats: {
     gamesPlayed: number;
     gamesWon: number;
@@ -47,12 +57,108 @@ interface SudokuStore extends GameState {
   useHint: () => void;
   undo: () => void;
   startNewGame: (difficulty: Difficulty) => void;
+  startDailyChallenge: () => void;
   pauseGame: () => void;
   resumeGame: () => void;
   updateTime: () => void;
   setDifficulty: (difficulty: Difficulty) => void;
   loadStats: () => Promise<void>;
   saveStats: () => Promise<void>;
+  loadDailyChallenge: () => Promise<void>;
+  saveDailyChallenge: () => Promise<void>;
+}
+
+// Seeded random number generator for consistent daily puzzles
+function seededRandom(seed: number): () => number {
+  return function() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+}
+
+function getTodayString(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function getDayNumber(): number {
+  const now = new Date();
+  const start = new Date(2024, 0, 1);
+  return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+// Seeded shuffle for deterministic puzzles
+function seededShuffle<T>(array: T[], random: () => number): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Generate seeded sudoku for daily challenge
+function generateSeededSudoku(difficulty: Difficulty, random: () => number): { puzzle: number[][]; solution: number[][] } {
+  const board: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
+
+  // Fill diagonal boxes with seeded random
+  for (let box = 0; box < 9; box += 3) {
+    const nums = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], random);
+    let idx = 0;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        board[box + i][box + j] = nums[idx++];
+      }
+    }
+  }
+
+  // Solve with seeded random
+  solveSeededSudoku(board, random);
+  const solution = board.map(row => [...row]);
+
+  // Remove cells
+  const cellsToRemove: Record<Difficulty, number> = {
+    easy: 35,
+    medium: 45,
+    hard: 52,
+    expert: 58,
+  };
+
+  const puzzle = solution.map(row => [...row]);
+  const positions = seededShuffle(
+    Array.from({ length: 81 }, (_, i) => ({ row: Math.floor(i / 9), col: i % 9 })),
+    random
+  );
+
+  let removed = 0;
+  for (const pos of positions) {
+    if (removed >= cellsToRemove[difficulty]) break;
+    if (puzzle[pos.row][pos.col] !== 0) {
+      puzzle[pos.row][pos.col] = 0;
+      removed++;
+    }
+  }
+
+  return { puzzle, solution };
+}
+
+function solveSeededSudoku(board: number[][], random: () => number): boolean {
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (board[row][col] === 0) {
+        const nums = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], random);
+        for (const num of nums) {
+          if (isValid(board, row, col, num)) {
+            board[row][col] = num;
+            if (solveSeededSudoku(board, random)) return true;
+            board[row][col] = 0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 // Sudoku puzzle generator
@@ -184,6 +290,7 @@ function initializeBoardFromPuzzle(puzzle: number[][]): Cell[][] {
 }
 
 const STORAGE_KEY = 'sudoku_stats';
+const DAILY_STORAGE_KEY = 'sudoku_daily';
 
 const initialStats = {
   gamesPlayed: 0,
@@ -191,6 +298,14 @@ const initialStats = {
   bestTime: { easy: null, medium: null, hard: null, expert: null } as Record<Difficulty, number | null>,
   currentStreak: 0,
   bestStreak: 0,
+};
+
+const initialDailyChallenge: DailyChallenge = {
+  date: getTodayString(),
+  completed: false,
+  bestTime: null,
+  streak: 0,
+  lastCompletedDate: null,
 };
 
 export const useSudokuStore = create<SudokuStore>((set, get) => ({
@@ -208,6 +323,8 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
   noteMode: false,
   stats: initialStats,
   history: [] as HistoryEntry[],
+  isDailyChallenge: false,
+  dailyChallenge: initialDailyChallenge,
 
   selectCell: (row, col) => {
     const { board, isPlaying, isPaused } = get();
@@ -304,7 +421,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
 
 
       if (complete) {
-        const { stats, difficulty, elapsedTime } = get();
+        const { stats, difficulty, elapsedTime, isDailyChallenge, dailyChallenge } = get();
         const newStats = { ...stats };
         newStats.gamesPlayed++;
         newStats.gamesWon++;
@@ -314,6 +431,38 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
         }
         if (!newStats.bestTime[difficulty] || elapsedTime < newStats.bestTime[difficulty]!) {
           newStats.bestTime[difficulty] = elapsedTime;
+        }
+
+        // Handle daily challenge completion
+        if (isDailyChallenge && !dailyChallenge.completed) {
+          const today = getTodayString();
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+          const newStreak = dailyChallenge.lastCompletedDate === yesterdayStr
+            ? dailyChallenge.streak + 1
+            : 1;
+
+          const newDailyChallenge: DailyChallenge = {
+            date: today,
+            completed: true,
+            bestTime: elapsedTime,
+            streak: newStreak,
+            lastCompletedDate: today,
+          };
+
+          set({
+            board: newBoard,
+            isComplete: true,
+            isPlaying: false,
+            stats: newStats,
+            history: newHistory,
+            dailyChallenge: newDailyChallenge,
+          });
+          get().saveStats();
+          get().saveDailyChallenge();
+          return;
         }
 
         set({ board: newBoard, isComplete: true, isPlaying: false, stats: newStats, history: newHistory });
@@ -445,6 +594,85 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
     } catch (e) {
       console.log('Failed to save stats:', e);
+    }
+  },
+
+  startDailyChallenge: () => {
+    const dayNum = getDayNumber();
+    const random = seededRandom(dayNum * 12345);
+
+    // Generate puzzle with seeded random
+    const { puzzle, solution } = generateSeededSudoku('medium', random);
+    const board = initializeBoardFromPuzzle(puzzle);
+
+    set({
+      board,
+      solution,
+      selectedCell: null,
+      difficulty: 'medium',
+      isPlaying: true,
+      isPaused: false,
+      isComplete: false,
+      mistakes: 0,
+      hintsRemaining: 3,
+      elapsedTime: 0,
+      noteMode: false,
+      history: [],
+      isDailyChallenge: true,
+    });
+  },
+
+  loadDailyChallenge: async () => {
+    try {
+      const data = await AsyncStorage.getItem(DAILY_STORAGE_KEY);
+      if (data) {
+        const saved = JSON.parse(data) as DailyChallenge;
+        const today = getTodayString();
+
+        // Check if streak should continue or reset
+        if (saved.lastCompletedDate) {
+          const lastDate = new Date(saved.lastCompletedDate);
+          const todayDate = new Date(today);
+          const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+          if (diffDays > 1) {
+            // Streak broken
+            set({
+              dailyChallenge: {
+                ...initialDailyChallenge,
+                date: today,
+                streak: 0,
+              }
+            });
+          } else if (saved.date === today) {
+            // Same day, keep state
+            set({ dailyChallenge: saved });
+          } else {
+            // New day, reset completed but keep streak
+            set({
+              dailyChallenge: {
+                ...saved,
+                date: today,
+                completed: false,
+                bestTime: null,
+              }
+            });
+          }
+        } else {
+          set({ dailyChallenge: { ...initialDailyChallenge, date: today } });
+        }
+      }
+    } catch (e) {
+      console.log('Failed to load daily challenge:', e);
+    }
+  },
+
+  saveDailyChallenge: async () => {
+    try {
+      const { dailyChallenge } = get();
+      await AsyncStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(dailyChallenge));
+    } catch (e) {
+      console.log('Failed to save daily challenge:', e);
     }
   },
 }));
