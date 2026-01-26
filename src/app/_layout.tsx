@@ -4,8 +4,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useFonts, Orbitron_400Regular, Orbitron_700Bold, Orbitron_900Black } from '@expo-google-fonts/orbitron';
 import { Rajdhani_400Regular, Rajdhani_500Medium, Rajdhani_600SemiBold, Rajdhani_700Bold } from '@expo-google-fonts/rajdhani';
+import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 
@@ -17,26 +17,25 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-const GameTheme = {
+const SudokuTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: '#00F5FF',
+    primary: '#6366F1',
     background: '#0A0A0F',
     card: '#12121A',
     text: '#FFFFFF',
     border: '#1F1F2E',
-    notification: '#FF006E',
+    notification: '#EF4444',
   },
 };
 
 function RootLayoutNav() {
   return (
-    <ThemeProvider value={GameTheme}>
+    <ThemeProvider value={SudokuTheme}>
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="game" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="gameover" options={{ gestureEnabled: false, animation: 'fade' }} />
       </Stack>
     </ThemeProvider>
   );
@@ -44,9 +43,6 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Orbitron_400Regular,
-    Orbitron_700Bold,
-    Orbitron_900Black,
     Rajdhani_400Regular,
     Rajdhani_500Medium,
     Rajdhani_600SemiBold,

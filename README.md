@@ -1,44 +1,35 @@
-# Reflex Rush
+# Sudoku Minimalist
 
-A minimalist reflex arcade game. Tap glowing targets before they disappear. Build combos, avoid danger targets, and chase high scores.
+A clean, elegant Sudoku puzzle game with a dark theme and smooth animations.
 
-## Gameplay
+## Features
 
-- **Tap Targets**: Colored orbs appear randomly - tap them before they fade
-- **Score Points**: Smaller targets = more points. Bonus (yellow lightning) targets = 50 points
-- **Avoid Danger**: Red X targets cost you a life if tapped
-- **Build Combos**: Hit consecutive targets to build multipliers (5+ = 1.5x, 10+ = 2x, etc.)
-- **Level Up**: Every 200 points increases difficulty - faster spawns, shorter lifetimes
-- **3 Lives**: Miss a target or tap a danger target and you lose a life
+### Game Modes
+- **Easy**: 35 cells removed - great for beginners
+- **Medium**: 45 cells removed - balanced challenge
+- **Hard**: 52 cells removed - for experienced players
+- **Expert**: 58 cells removed - ultimate difficulty
 
-## Game Feel Features
+### Gameplay
+- **Tap to Select**: Tap any cell to select it
+- **Number Pad**: Enter numbers 1-9 to fill cells
+- **Notes Mode**: Toggle pencil marks for possible candidates
+- **Hints**: 3 hints per game to reveal correct numbers
+- **Erase**: Clear a cell's value or notes
+- **Auto-Highlight**: Related cells highlight when you select
 
-### Countdown & Start
-- Dramatic 3-2-1-GO countdown with scaling animations
-- Haptic feedback on each countdown beat
-- Full-screen overlay transition into gameplay
+### Smart Features
+- **Error Detection**: Wrong numbers show in red
+- **3 Mistakes Limit**: Game ends after 3 errors
+- **Number Tracking**: Numbers fade when all 9 are placed
+- **Auto-Note Removal**: Notes clear when number is placed
+- **Timer**: Track your solve time
+- **Pause**: Hide the board and pause the timer
 
-### Visual Juice
-- **Particle Explosions**: 8 particles burst from hit targets matching target color
-- **Screen Shake**: Device-like shake effect on misses and danger hits
-- **Red Flash**: Full-screen flash overlay when taking damage
-- **Level Up Banner**: Animated banner slides in when reaching new levels
-
-### Combo System
-- Tiered combo messages: "COMBO!" → "ON FIRE!" → "UNSTOPPABLE!" → "LEGENDARY!"
-- Color progression: cyan → yellow → pink → purple
-- Visual badge in HUD showing current streak
-
-### Target Animations
-- **Pulsing Bonus**: Yellow bonus targets pulse rhythmically
-- **Rotating Danger**: Red X targets slowly rotate for visibility
-- **Urgency Scale**: Targets grow slightly when about to expire
-
-### Game Over Polish
-- **Confetti**: 30 animated particles fall on new high scores
-- **Score Counter**: Satisfying count-up animation with easing
-- **Motivational Messages**: Context-aware messages based on performance
-- **Share Button**: Native share to challenge friends
+### Statistics
+- Games won
+- Best time per difficulty
+- Current win streak
 
 ## App Structure
 
@@ -46,11 +37,10 @@ A minimalist reflex arcade game. Tap glowing targets before they disappear. Buil
 src/
   app/
     _layout.tsx    # Root layout with fonts
-    index.tsx      # Main menu screen
-    game.tsx       # Core gameplay
-    gameover.tsx   # Results screen
+    index.tsx      # Home screen with difficulty selection
+    game.tsx       # Sudoku game board and controls
   lib/
-    gameStore.ts   # Zustand store for game state
+    sudokuStore.ts # Zustand store with puzzle generation
 ```
 
 ## Tech Stack
@@ -58,14 +48,16 @@ src/
 - Expo SDK 53 with React Native
 - Expo Router for navigation
 - Zustand for state management
-- React Native Reanimated for 60fps animations
+- React Native Reanimated for animations
 - Expo Haptics for tactile feedback
-- Orbitron + Rajdhani fonts for arcade aesthetic
+- Rajdhani font for clean typography
 
 ## Color Palette
 
-- Cyan: `#00F5FF` (primary, score)
-- Hot Pink: `#FF006E` (danger, lives)
-- Yellow: `#FFBE0B` (bonus, combo)
-- Purple: `#8338EC` (accent)
-- Background: `#050508`
+- Indigo: `#6366F1` (primary, selection)
+- Light Indigo: `#818CF8` (user input)
+- Green: `#4ADE80` (success/easy)
+- Blue: `#60A5FA` (medium)
+- Amber: `#F59E0B` (hard/hints)
+- Red: `#EF4444` (errors/expert)
+- Background: `#0A0A0F`

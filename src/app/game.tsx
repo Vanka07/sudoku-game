@@ -1,743 +1,699 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, Pressable, Dimensions } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Heart, X, Zap, AlertTriangle } from 'lucide-react-native';
+import {
+  Pause,
+  Lightbulb,
+  Pencil,
+  Eraser,
+  Home,
+} from 'lucide-react-native';
 import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
   withSpring,
+  withTiming,
   withSequence,
-  withRepeat,
-  withDelay,
-  runOnJS,
-  Easing,
-  FadeIn,
-  FadeOut,
-  ZoomIn,
-  SlideInUp,
-  BounceIn,
-  interpolate,
-  cancelAnimation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { useGameStore, Target, TARGET_COLORS } from '@/lib/gameStore';
+import { useSudokuStore, DIFFICULTY_CONFIG, Cell } from '@/lib/sudokuStore';
 
-const { width, height } = Dimensions.get('window');
-
-const GAME_AREA_PADDING = 20;
-const TARGET_MIN_SIZE = 50;
-const TARGET_MAX_SIZE = 90;
-const BASE_SPAWN_INTERVAL = 1200;
-const BASE_LIFETIME = 2500;
+const { width } = Dimensions.get('window');
+const BOARD_PADDING = 16;
+const BOARD_SIZE = width - BOARD_PADDING * 2;
+const CELL_SIZE = BOARD_SIZE / 9;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// Particle component for hit effects
-function Particle({ x, y, color, delay }: { x: number; y: number; color: string; delay: number }) {
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const opacity = useSharedValue(1);
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 40 + Math.random() * 60;
-
-    translateX.value = withDelay(delay, withTiming(Math.cos(angle) * distance, { duration: 400, easing: Easing.out(Easing.quad) }));
-    translateY.value = withDelay(delay, withTiming(Math.sin(angle) * distance, { duration: 400, easing: Easing.out(Easing.quad) }));
-    opacity.value = withDelay(delay, withTiming(0, { duration: 400 }));
-    scale.value = withDelay(delay, withSequence(
-      withTiming(1.5, { duration: 100 }),
-      withTiming(0, { duration: 300 })
-    ));
-  }, []);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        style,
-        {
-          position: 'absolute',
-          left: x - 4,
-          top: y - 4,
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: color,
-        },
-      ]}
-    />
-  );
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Countdown overlay
-function CountdownOverlay({ onComplete }: { onComplete: () => void }) {
-  const [count, setCount] = useState(3);
-  const scale = useSharedValue(0.5);
-  const opacity = useSharedValue(0);
+function SudokuCell({
+  cell,
+  row,
+  col,
+  isSelected,
+  sameValue,
+  onPress,
+}: {
+  cell: Cell;
+  row: number;
+  col: number;
+  isSelected: boolean;
+  sameValue: boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
 
-  useEffect(() => {
-    const animate = () => {
-      scale.value = 0.5;
-      opacity.value = 0;
-      scale.value = withSpring(1, { damping: 8, stiffness: 200 });
-      opacity.value = withTiming(1, { duration: 200 });
-
-      setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 200 });
-      }, 600);
-    };
-
-    animate();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    const interval = setInterval(() => {
-      setCount((c) => {
-        if (c <= 1) {
-          clearInterval(interval);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          setTimeout(onComplete, 300);
-          return 0;
-        }
-        animate();
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        return c - 1;
-      });
-    }, 800);
-
-    return () => clearInterval(interval);
-  }, []);
+  const isBoxBorderRight = col === 2 || col === 5;
+  const isBoxBorderBottom = row === 2 || row === 5;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: opacity.value,
   }));
 
+  const handlePress = () => {
+    scale.value = withSequence(
+      withTiming(0.9, { duration: 50 }),
+      withSpring(1, { damping: 15 })
+    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  const bgColor = isSelected
+    ? 'rgba(99, 102, 241, 0.35)'
+    : cell.isHighlighted
+    ? 'rgba(99, 102, 241, 0.12)'
+    : sameValue && cell.value !== 0
+    ? 'rgba(99, 102, 241, 0.2)'
+    : 'transparent';
+
+  const textColor = cell.isError
+    ? '#EF4444'
+    : cell.isGiven
+    ? '#FFFFFF'
+    : '#818CF8';
+
   return (
-    <View className="absolute inset-0 z-50 items-center justify-center bg-black/80">
-      <Animated.View style={animatedStyle}>
-        <Text style={{ fontFamily: 'Orbitron_900Black', fontSize: 120, color: count === 0 ? '#00F5FF' : '#fff' }}>
-          {count === 0 ? 'GO!' : count}
+    <AnimatedPressable
+      style={[
+        animatedStyle,
+        {
+          width: CELL_SIZE,
+          height: CELL_SIZE,
+          backgroundColor: bgColor,
+          borderRightWidth: isBoxBorderRight ? 2 : 0.5,
+          borderBottomWidth: isBoxBorderBottom ? 2 : 0.5,
+          borderColor: isBoxBorderRight || isBoxBorderBottom ? '#4B5563' : '#1F2937',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      ]}
+      onPress={handlePress}
+    >
+      {cell.value !== 0 ? (
+        <Text
+          style={{
+            fontFamily: cell.isGiven ? 'Rajdhani_700Bold' : 'Rajdhani_600SemiBold',
+            fontSize: 24,
+            color: textColor,
+          }}
+        >
+          {cell.value}
         </Text>
-      </Animated.View>
-    </View>
+      ) : cell.notes.length > 0 ? (
+        <View className="flex-row flex-wrap w-full h-full p-0.5">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+            <View
+              key={n}
+              style={{
+                width: CELL_SIZE / 3 - 1,
+                height: CELL_SIZE / 3 - 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {cell.notes.includes(n) && (
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_500Medium',
+                    fontSize: 10,
+                    color: '#6B7280',
+                  }}
+                >
+                  {n}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </AnimatedPressable>
   );
 }
 
-// Level up banner
-function LevelUpBanner({ level }: { level: number }) {
+function SudokuBoard() {
+  const board = useSudokuStore((s) => s.board);
+  const selectedCell = useSudokuStore((s) => s.selectedCell);
+  const selectCell = useSudokuStore((s) => s.selectCell);
+
+  const selectedValue = selectedCell
+    ? board[selectedCell.row][selectedCell.col].value
+    : 0;
+
   return (
     <Animated.View
-      entering={SlideInUp.springify()}
-      exiting={FadeOut.duration(300)}
-      className="absolute top-24 left-0 right-0 items-center z-20"
+      entering={FadeInDown.delay(100).springify()}
+      style={{
+        width: BOARD_SIZE,
+        height: BOARD_SIZE,
+        backgroundColor: '#111318',
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#4B5563',
+        overflow: 'hidden',
+      }}
     >
-      <LinearGradient
-        colors={['#8338EC', '#3A86FF']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 30 }}
-      >
-        <Text style={{ fontFamily: 'Orbitron_700Bold', fontSize: 18, color: '#fff' }}>
-          LEVEL {level}
-        </Text>
-      </LinearGradient>
+      {board.map((row, rowIndex) => (
+        <View key={rowIndex} className="flex-row">
+          {row.map((cell, colIndex) => (
+            <SudokuCell
+              key={`${rowIndex}-${colIndex}`}
+              cell={cell}
+              row={rowIndex}
+              col={colIndex}
+              isSelected={
+                selectedCell?.row === rowIndex && selectedCell?.col === colIndex
+              }
+              sameValue={selectedValue !== 0 && cell.value === selectedValue}
+              onPress={() => selectCell(rowIndex, colIndex)}
+            />
+          ))}
+        </View>
+      ))}
     </Animated.View>
   );
 }
 
-// Danger warning flash
-function DangerFlash() {
+function NumberButton({
+  num,
+  onPress,
+  count,
+}: {
+  num: number;
+  onPress: () => void;
+  count: number;
+}) {
+  const scale = useSharedValue(1);
+  const isDisabled = count >= 9;
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    if (isDisabled) return;
+    scale.value = withSequence(
+      withTiming(0.85, { duration: 50 }),
+      withSpring(1, { damping: 12 })
+    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  };
+
   return (
-    <Animated.View
-      entering={FadeIn.duration(100)}
-      exiting={FadeOut.duration(200)}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255, 0, 110, 0.3)',
-      }}
-    />
+    <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+      <View
+        className="items-center justify-center mx-1"
+        style={{
+          width: (width - 64) / 9 - 2,
+          height: 56,
+          backgroundColor: isDisabled
+            ? 'rgba(255, 255, 255, 0.02)'
+            : 'rgba(99, 102, 241, 0.1)',
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: isDisabled
+            ? 'rgba(255, 255, 255, 0.03)'
+            : 'rgba(99, 102, 241, 0.3)',
+          opacity: isDisabled ? 0.3 : 1,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: 'Rajdhani_700Bold',
+            fontSize: 26,
+            color: isDisabled ? '#374151' : '#818CF8',
+          }}
+        >
+          {num}
+        </Text>
+      </View>
+    </AnimatedPressable>
   );
 }
 
-interface TargetComponentProps {
-  target: Target;
-  onHit: (target: Target) => void;
-  onMiss: (target: Target) => void;
-}
+function NumberPad() {
+  const enterNumber = useSudokuStore((s) => s.enterNumber);
+  const board = useSudokuStore((s) => s.board);
 
-function TargetComponent({ target, onHit, onMiss }: TargetComponentProps) {
-  const scale = useSharedValue(0);
-  const opacity = useSharedValue(1);
-  const progress = useSharedValue(1);
-  const pulseScale = useSharedValue(1);
-  const rotation = useSharedValue(0);
-
-  useEffect(() => {
-    // Spawn animation
-    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
-
-    // Bonus targets pulse
-    if (target.type === 'bonus') {
-      pulseScale.value = withRepeat(
-        withSequence(
-          withTiming(1.1, { duration: 300 }),
-          withTiming(1, { duration: 300 })
-        ),
-        -1,
-        true
-      );
-    }
-
-    // Danger targets rotate
-    if (target.type === 'danger') {
-      rotation.value = withRepeat(
-        withTiming(360, { duration: 2000, easing: Easing.linear }),
-        -1,
-        false
-      );
-    }
-
-    // Lifetime countdown
-    progress.value = withTiming(0, {
-      duration: target.lifetime,
-      easing: Easing.linear,
-    });
-
-    // Auto-miss after lifetime
-    const timeout = setTimeout(() => {
-      opacity.value = withTiming(0, { duration: 150 });
-      setTimeout(() => onMiss(target), 150);
-    }, target.lifetime);
-
-    return () => {
-      clearTimeout(timeout);
-      cancelAnimation(pulseScale);
-      cancelAnimation(rotation);
-    };
-  }, []);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value * pulseScale.value },
-      { rotate: `${rotation.value}deg` },
-    ],
-    opacity: opacity.value,
-  }));
-
-  const progressStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: progress.value }],
-  }));
-
-  // Warning pulse when time is running out
-  const urgencyStyle = useAnimatedStyle(() => {
-    const urgency = interpolate(progress.value, [0, 0.3, 1], [1.1, 1, 1]);
-    return {
-      transform: [{ scale: urgency }],
-    };
-  });
-
-  const handlePress = () => {
-    scale.value = withSequence(
-      withTiming(1.4, { duration: 80 }),
-      withTiming(0, { duration: 120 })
+  // Count how many of each number are placed
+  const counts = useMemo(() => {
+    const c: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+    board.forEach((row) =>
+      row.forEach((cell) => {
+        if (cell.value !== 0) c[cell.value]++;
+      })
     );
-    opacity.value = withTiming(0, { duration: 120 });
-    setTimeout(() => onHit(target), 80);
-  };
-
-  const isDanger = target.type === 'danger';
-  const isBonus = target.type === 'bonus';
+    return c;
+  }, [board]);
 
   return (
     <Animated.View
-      style={[
-        containerStyle,
-        {
-          position: 'absolute',
-          left: target.x - target.size / 2,
-          top: target.y - target.size / 2,
-          width: target.size,
-          height: target.size,
-        },
-      ]}
+      entering={FadeInUp.delay(200).springify()}
+      className="flex-row justify-center mt-4"
     >
-      <Pressable
-        onPress={handlePress}
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+        <NumberButton
+          key={num}
+          num={num}
+          onPress={() => enterNumber(num)}
+          count={counts[num]}
+        />
+      ))}
+    </Animated.View>
+  );
+}
+
+function ActionButton({
+  icon,
+  label,
+  onPress,
+  isActive,
+  badge,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onPress: () => void;
+  isActive?: boolean;
+  badge?: number;
+}) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withTiming(0.9, { duration: 50 }),
+      withSpring(1, { damping: 15 })
+    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  return (
+    <AnimatedPressable style={animatedStyle} onPress={handlePress} className="items-center mx-3">
+      <View
+        className="w-14 h-14 rounded-2xl items-center justify-center relative"
         style={{
-          width: '100%',
-          height: '100%',
-          alignItems: 'center',
-          justifyContent: 'center',
+          backgroundColor: isActive
+            ? 'rgba(99, 102, 241, 0.2)'
+            : 'rgba(255, 255, 255, 0.04)',
+          borderWidth: 1,
+          borderColor: isActive
+            ? 'rgba(99, 102, 241, 0.4)'
+            : 'rgba(255, 255, 255, 0.08)',
         }}
       >
-        <Animated.View style={[urgencyStyle, { width: '100%', height: '100%' }]}>
-          <LinearGradient
-            colors={
-              isDanger
-                ? ['#FF006E', '#FF4444'] as const
-                : isBonus
-                ? ['#FFBE0B', '#FF8800'] as const
-                : [target.color, target.color + '99'] as const
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: target.size / 2,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: isDanger ? '#FF006E' : isBonus ? '#FFBE0B' : target.color,
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 1,
-              shadowRadius: 20,
-            }}
+        {icon}
+        {badge !== undefined && badge > 0 && (
+          <View
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center"
+            style={{ backgroundColor: '#6366F1' }}
           >
-            <View
+            <Text
               style={{
-                width: target.size - 14,
-                height: target.size - 14,
-                borderRadius: (target.size - 14) / 2,
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 2,
-                borderColor: 'rgba(255, 255, 255, 0.2)',
+                fontFamily: 'Rajdhani_600SemiBold',
+                fontSize: 11,
+                color: '#FFFFFF',
               }}
             >
-              {isDanger && <X size={26} color="#fff" strokeWidth={3} />}
-              {isBonus && <Zap size={26} color="#fff" fill="#fff" />}
-              {!isDanger && !isBonus && (
-                <Text style={{ fontFamily: 'Orbitron_700Bold', color: '#fff', fontSize: 16 }}>
-                  {target.points}
-                </Text>
-              )}
-            </View>
-          </LinearGradient>
-        </Animated.View>
+              {badge}
+            </Text>
+          </View>
+        )}
+      </View>
+      <Text
+        style={{
+          fontFamily: 'Rajdhani_500Medium',
+          fontSize: 11,
+          color: isActive ? '#818CF8' : '#6B7280',
+          marginTop: 6,
+        }}
+      >
+        {label}
+      </Text>
+    </AnimatedPressable>
+  );
+}
 
-        {/* Progress ring */}
+function ActionBar() {
+  const noteMode = useSudokuStore((s) => s.noteMode);
+  const toggleNoteMode = useSudokuStore((s) => s.toggleNoteMode);
+  const clearCell = useSudokuStore((s) => s.clearCell);
+  const useHint = useSudokuStore((s) => s.useHint);
+  const hintsRemaining = useSudokuStore((s) => s.hintsRemaining);
+
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(300).springify()}
+      className="flex-row justify-center mt-6"
+    >
+      <ActionButton
+        icon={<Pencil size={22} color={noteMode ? '#818CF8' : '#6B7280'} />}
+        label="Notes"
+        onPress={toggleNoteMode}
+        isActive={noteMode}
+      />
+      <ActionButton
+        icon={<Eraser size={22} color="#6B7280" />}
+        label="Erase"
+        onPress={clearCell}
+      />
+      <ActionButton
+        icon={<Lightbulb size={22} color="#F59E0B" />}
+        label="Hint"
+        onPress={useHint}
+        badge={hintsRemaining}
+      />
+    </Animated.View>
+  );
+}
+
+function Header() {
+  const router = useRouter();
+  const difficulty = useSudokuStore((s) => s.difficulty);
+  const mistakes = useSudokuStore((s) => s.mistakes);
+  const maxMistakes = useSudokuStore((s) => s.maxMistakes);
+  const elapsedTime = useSudokuStore((s) => s.elapsedTime);
+  const isPaused = useSudokuStore((s) => s.isPaused);
+  const pauseGame = useSudokuStore((s) => s.pauseGame);
+  const resumeGame = useSudokuStore((s) => s.resumeGame);
+  const insets = useSafeAreaInsets();
+
+  const config = DIFFICULTY_CONFIG[difficulty];
+
+  return (
+    <View style={{ paddingTop: insets.top + 8 }} className="px-4 pb-4">
+      <View className="flex-row items-center justify-between">
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          }}
+          className="w-10 h-10 rounded-full items-center justify-center"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+        >
+          <Home size={20} color="#6B7280" />
+        </Pressable>
+
+        <View className="flex-row items-center">
+          <View
+            className="px-3 py-1.5 rounded-full mr-3"
+            style={{ backgroundColor: `${config.color}20` }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Rajdhani_600SemiBold',
+                fontSize: 12,
+                color: config.color,
+                letterSpacing: 1,
+              }}
+            >
+              {config.label.toUpperCase()}
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              fontFamily: 'Rajdhani_600SemiBold',
+              fontSize: 18,
+              color: '#FFFFFF',
+              letterSpacing: 1,
+            }}
+          >
+            {formatTime(elapsedTime)}
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            isPaused ? resumeGame() : pauseGame();
+          }}
+          className="w-10 h-10 rounded-full items-center justify-center"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+        >
+          <Pause size={20} color="#6B7280" />
+        </Pressable>
+      </View>
+
+      {/* Mistakes indicator */}
+      <View className="flex-row justify-center mt-3">
+        {Array(maxMistakes)
+          .fill(0)
+          .map((_, i) => (
+            <View
+              key={i}
+              className="w-2 h-2 rounded-full mx-1"
+              style={{
+                backgroundColor: i < mistakes ? '#EF4444' : 'rgba(255, 255, 255, 0.1)',
+              }}
+            />
+          ))}
+      </View>
+    </View>
+  );
+}
+
+function PauseOverlay() {
+  const isPaused = useSudokuStore((s) => s.isPaused);
+  const resumeGame = useSudokuStore((s) => s.resumeGame);
+
+  if (!isPaused) return null;
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      className="absolute inset-0 items-center justify-center"
+      style={{ backgroundColor: 'rgba(10, 10, 15, 0.95)' }}
+    >
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          resumeGame();
+        }}
+        className="items-center"
+      >
         <View
+          className="w-24 h-24 rounded-full items-center justify-center mb-6"
           style={{
-            position: 'absolute',
-            bottom: -6,
-            width: target.size * 0.7,
-            height: 5,
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            borderRadius: 3,
-            overflow: 'hidden',
+            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+            borderWidth: 2,
+            borderColor: 'rgba(99, 102, 241, 0.3)',
           }}
         >
-          <Animated.View
-            style={[
-              progressStyle,
-              {
-                width: '100%',
-                height: '100%',
-                backgroundColor: isDanger ? '#FF006E' : isBonus ? '#FFBE0B' : '#00F5FF',
-                transformOrigin: 'left',
-              },
-            ]}
-          />
+          <Pause size={40} color="#818CF8" />
         </View>
+        <Text
+          style={{
+            fontFamily: 'Rajdhani_700Bold',
+            fontSize: 28,
+            color: '#FFFFFF',
+            letterSpacing: 2,
+          }}
+        >
+          PAUSED
+        </Text>
+        <Text
+          style={{
+            fontFamily: 'Rajdhani_400Regular',
+            fontSize: 14,
+            color: '#6B7280',
+            marginTop: 8,
+          }}
+        >
+          Tap to resume
+        </Text>
       </Pressable>
     </Animated.View>
   );
 }
 
-function ComboDisplay({ combo }: { combo: number }) {
-  const scale = useSharedValue(1);
+function VictoryModal() {
+  const router = useRouter();
+  const isComplete = useSudokuStore((s) => s.isComplete);
+  const mistakes = useSudokuStore((s) => s.mistakes);
+  const maxMistakes = useSudokuStore((s) => s.maxMistakes);
+  const elapsedTime = useSudokuStore((s) => s.elapsedTime);
+  const difficulty = useSudokuStore((s) => s.difficulty);
+  const startNewGame = useSudokuStore((s) => s.startNewGame);
 
-  useEffect(() => {
-    if (combo > 0) {
-      scale.value = withSequence(
-        withSpring(1.4, { damping: 6, stiffness: 300 }),
-        withSpring(1, { damping: 10 })
-      );
-    }
-  }, [combo]);
+  const isGameOver = mistakes >= maxMistakes;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  if (!isComplete) return null;
 
-  if (combo < 3) return null;
-
-  const comboColor = combo >= 15 ? '#FF006E' : combo >= 10 ? '#FFBE0B' : '#00F5FF';
-
-  return (
-    <Animated.View style={animatedStyle} className="absolute top-1/3 left-0 right-0 items-center">
-      <Text style={{ fontFamily: 'Orbitron_900Black', fontSize: 56, color: comboColor }}>
-        {combo}x
-      </Text>
-      <Text style={{ fontFamily: 'Rajdhani_700Bold', fontSize: 16, color: comboColor, letterSpacing: 4 }}>
-        {combo >= 15 ? 'UNSTOPPABLE!' : combo >= 10 ? 'ON FIRE!' : 'COMBO!'}
-      </Text>
-    </Animated.View>
-  );
-}
-
-function FloatingScore({ score, x, y, isBonus }: { score: number; x: number; y: number; isBonus?: boolean }) {
   return (
     <Animated.View
-      entering={ZoomIn.duration(150)}
-      exiting={FadeOut.duration(300)}
-      style={{
-        position: 'absolute',
-        left: x - 40,
-        top: y - 35,
-        alignItems: 'center',
-      }}
+      entering={FadeIn.duration(300)}
+      className="absolute inset-0 items-center justify-center px-8"
+      style={{ backgroundColor: 'rgba(10, 10, 15, 0.97)' }}
     >
-      <Text style={{ fontFamily: 'Orbitron_700Bold', fontSize: isBonus ? 32 : 26, color: isBonus ? '#FFBE0B' : '#00F5FF' }}>
-        +{score}
-      </Text>
-      {isBonus && (
-        <Text style={{ fontFamily: 'Rajdhani_600SemiBold', fontSize: 12, color: '#FFBE0B' }}>
-          BONUS!
-        </Text>
-      )}
-    </Animated.View>
-  );
-}
-
-// Lives display with animation
-function LivesDisplay({ lives, maxLives }: { lives: number; maxLives: number }) {
-  return (
-    <View className="flex-row items-center">
-      {[...Array(maxLives)].map((_, i) => (
-        <Animated.View
-          key={i}
-          entering={i < lives ? BounceIn.delay(i * 100) : undefined}
+      <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center">
+        <Text
+          style={{
+            fontFamily: 'Rajdhani_700Bold',
+            fontSize: 36,
+            color: isGameOver ? '#EF4444' : '#4ADE80',
+            letterSpacing: 4,
+            marginBottom: 8,
+          }}
         >
-          <Heart
-            size={26}
-            color={i < lives ? '#FF006E' : '#333'}
-            fill={i < lives ? '#FF006E' : 'transparent'}
-            style={{ marginRight: 6 }}
-          />
-        </Animated.View>
-      ))}
-    </View>
+          {isGameOver ? 'GAME OVER' : 'COMPLETE!'}
+        </Text>
+
+        {!isGameOver && (
+          <>
+            <Text
+              style={{
+                fontFamily: 'Rajdhani_500Medium',
+                fontSize: 16,
+                color: '#6B7280',
+                marginBottom: 24,
+              }}
+            >
+              You solved it in {formatTime(elapsedTime)}
+            </Text>
+
+            <View className="flex-row mb-8">
+              <View className="items-center mx-4">
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_700Bold',
+                    fontSize: 32,
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {formatTime(elapsedTime)}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_400Regular',
+                    fontSize: 12,
+                    color: '#6B7280',
+                  }}
+                >
+                  TIME
+                </Text>
+              </View>
+              <View className="items-center mx-4">
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_700Bold',
+                    fontSize: 32,
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {mistakes}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_400Regular',
+                    fontSize: 12,
+                    color: '#6B7280',
+                  }}
+                >
+                  MISTAKES
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
+
+        <View className="flex-row">
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.back();
+            }}
+            className="px-8 py-4 rounded-xl mr-3"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Rajdhani_600SemiBold',
+                fontSize: 16,
+                color: '#9CA3AF',
+              }}
+            >
+              HOME
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              startNewGame(difficulty);
+            }}
+            className="px-8 py-4 rounded-xl"
+            style={{
+              backgroundColor: '#6366F1',
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Rajdhani_600SemiBold',
+                fontSize: 16,
+                color: '#FFFFFF',
+              }}
+            >
+              NEW GAME
+            </Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
 export default function GameScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const isPlaying = useSudokuStore((s) => s.isPlaying);
+  const isPaused = useSudokuStore((s) => s.isPaused);
+  const updateTime = useSudokuStore((s) => s.updateTime);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [showCountdown, setShowCountdown] = useState(true);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  const [showDangerFlash, setShowDangerFlash] = useState(false);
-  const [particles, setParticles] = useState<Array<{ id: string; x: number; y: number; color: string }>>([]);
-
-  const gameState = useGameStore((s) => s.gameState);
-  const score = useGameStore((s) => s.score);
-  const lives = useGameStore((s) => s.lives);
-  const level = useGameStore((s) => s.level);
-  const combo = useGameStore((s) => s.combo);
-  const targets = useGameStore((s) => s.targets);
-  const hapticEnabled = useGameStore((s) => s.hapticEnabled);
-
-  const startGame = useGameStore((s) => s.startGame);
-  const endGame = useGameStore((s) => s.endGame);
-  const addScore = useGameStore((s) => s.addScore);
-  const loseLife = useGameStore((s) => s.loseLife);
-  const incrementCombo = useGameStore((s) => s.incrementCombo);
-  const setLevel = useGameStore((s) => s.setLevel);
-  const addTarget = useGameStore((s) => s.addTarget);
-  const removeTarget = useGameStore((s) => s.removeTarget);
-
-  const spawnIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const gameAreaTop = insets.top + 80;
-  const gameAreaBottom = height - 100;
-  const gameAreaHeight = gameAreaBottom - gameAreaTop;
-  const previousLevel = useRef(1);
-
-  const [floatingScores, setFloatingScores] = useState<Array<{ id: string; score: number; x: number; y: number; isBonus?: boolean }>>([]);
-
-  // Screen shake animation
-  const shakeX = useSharedValue(0);
-  const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
-  }));
-
-  const triggerShake = () => {
-    shakeX.value = withSequence(
-      withTiming(-8, { duration: 50 }),
-      withTiming(8, { duration: 50 }),
-      withTiming(-6, { duration: 50 }),
-      withTiming(6, { duration: 50 }),
-      withTiming(0, { duration: 50 })
-    );
-  };
-
-  // Spawn particles
-  const spawnParticles = (x: number, y: number, color: string) => {
-    const newParticles = Array.from({ length: 8 }, (_, i) => ({
-      id: `${Date.now()}-${i}`,
-      x,
-      y: y - gameAreaTop,
-      color,
-    }));
-    setParticles((prev) => [...prev, ...newParticles]);
-    setTimeout(() => {
-      setParticles((prev) => prev.filter((p) => !newParticles.find((np) => np.id === p.id)));
-    }, 500);
-  };
-
-  // Start game after countdown
-  const handleCountdownComplete = () => {
-    setShowCountdown(false);
-    startGame();
-  };
-
-  // Spawn targets
   useEffect(() => {
-    if (gameState !== 'playing' || showCountdown) return;
-
-    const spawnTarget = () => {
-      const size = Math.random() * (TARGET_MAX_SIZE - TARGET_MIN_SIZE) + TARGET_MIN_SIZE;
-      const x = Math.random() * (width - GAME_AREA_PADDING * 2 - size) + GAME_AREA_PADDING + size / 2;
-      const y = Math.random() * (gameAreaHeight - size) + gameAreaTop + size / 2;
-
-      // Difficulty scaling
-      const difficultyMultiplier = 1 - (level - 1) * 0.08;
-      const lifetime = Math.max(700, BASE_LIFETIME * difficultyMultiplier);
-
-      // Random target type - more danger at higher levels
-      const typeRoll = Math.random();
-      const dangerChance = 0.08 + (level - 1) * 0.02;
-      let type: 'normal' | 'bonus' | 'danger' = 'normal';
-      if (typeRoll > 0.94) type = 'bonus';
-      else if (typeRoll > (1 - dangerChance) && level > 1) type = 'danger';
-
-      const points = type === 'bonus' ? 50 : type === 'danger' ? 0 : Math.round(10 + (TARGET_MAX_SIZE - size) / 3);
-
-      const target: Target = {
-        id: Date.now().toString() + Math.random(),
-        x,
-        y,
-        size,
-        color: TARGET_COLORS[Math.floor(Math.random() * TARGET_COLORS.length)],
-        spawnTime: Date.now(),
-        lifetime,
-        points,
-        type,
-      };
-
-      addTarget(target);
-    };
-
-    // Initial spawn
-    spawnTarget();
-
-    // Spawn interval decreases with level
-    const interval = Math.max(350, BASE_SPAWN_INTERVAL - (level - 1) * 100);
-    spawnIntervalRef.current = setInterval(spawnTarget, interval);
+    if (isPlaying && !isPaused) {
+      timerRef.current = setInterval(() => {
+        updateTime();
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
 
     return () => {
-      if (spawnIntervalRef.current) {
-        clearInterval(spawnIntervalRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
-  }, [gameState, level, gameAreaTop, gameAreaHeight, showCountdown]);
-
-  // Level up based on score
-  useEffect(() => {
-    const newLevel = Math.floor(score / 200) + 1;
-    if (newLevel !== level && newLevel <= 10) {
-      setLevel(newLevel);
-      if (hapticEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-      // Show level up banner
-      if (newLevel > previousLevel.current) {
-        setShowLevelUp(true);
-        setTimeout(() => setShowLevelUp(false), 1500);
-        previousLevel.current = newLevel;
-      }
-    }
-  }, [score, level]);
-
-  // Check for game over
-  useEffect(() => {
-    if (gameState === 'gameover') {
-      router.replace('/gameover');
-    }
-  }, [gameState]);
-
-  const handleHit = useCallback((target: Target) => {
-    removeTarget(target.id);
-
-    if (target.type === 'danger') {
-      // Hit danger target - lose life
-      if (hapticEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-      triggerShake();
-      setShowDangerFlash(true);
-      setTimeout(() => setShowDangerFlash(false), 200);
-      loseLife();
-      return;
-    }
-
-    // Good hit
-    if (hapticEnabled) {
-      Haptics.impactAsync(target.type === 'bonus' ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    // Spawn particles
-    spawnParticles(target.x, target.y, target.type === 'bonus' ? '#FFBE0B' : target.color);
-
-    const multiplier = 1 + Math.floor(combo / 5) * 0.5;
-    const points = Math.round(target.points * multiplier);
-
-    addScore(target.points);
-    incrementCombo();
-
-    // Show floating score
-    setFloatingScores((prev) => [...prev, { id: target.id, score: points, x: target.x, y: target.y - gameAreaTop, isBonus: target.type === 'bonus' }]);
-    setTimeout(() => {
-      setFloatingScores((prev) => prev.filter((f) => f.id !== target.id));
-    }, 600);
-  }, [combo, hapticEnabled, gameAreaTop]);
-
-  const handleMiss = useCallback((target: Target) => {
-    removeTarget(target.id);
-
-    if (target.type === 'danger') {
-      // Good - avoided danger target
-      return;
-    }
-
-    // Missed a good target
-    if (hapticEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    }
-    triggerShake();
-    setShowDangerFlash(true);
-    setTimeout(() => setShowDangerFlash(false), 200);
-    loseLife();
-  }, [hapticEnabled]);
+  }, [isPlaying, isPaused]);
 
   return (
-    <View className="flex-1 bg-[#050508]">
-      {/* Countdown Overlay */}
-      {showCountdown && <CountdownOverlay onComplete={handleCountdownComplete} />}
+    <View className="flex-1 bg-[#0A0A0F]">
+      <Header />
 
-      {/* Danger Flash */}
-      {showDangerFlash && <DangerFlash />}
+      <View className="flex-1 items-center justify-center">
+        <SudokuBoard />
+        <NumberPad />
+        <ActionBar />
+      </View>
 
-      {/* Background glow based on combo */}
-      {combo >= 5 && (
-        <Animated.View
-          entering={FadeIn}
-          exiting={FadeOut}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: combo >= 15 ? 'rgba(255, 0, 110, 0.1)' : combo >= 10 ? 'rgba(255, 190, 11, 0.08)' : 'rgba(0, 245, 255, 0.05)',
-          }}
-        />
-      )}
-
-      <Animated.View style={[shakeStyle, { flex: 1 }]}>
-        {/* HUD */}
-        <SafeAreaView edges={['top']} className="absolute top-0 left-0 right-0 z-10">
-          <View className="flex-row items-center justify-between px-5 py-3">
-            {/* Lives */}
-            <LivesDisplay lives={lives} maxLives={3} />
-
-            {/* Score */}
-            <View className="items-center">
-              <Text style={{ fontFamily: 'Orbitron_700Bold', fontSize: 32, color: '#00F5FF' }}>
-                {score}
-              </Text>
-              <View className="flex-row items-center">
-                <View
-                  className="px-2 py-0.5 rounded-full mr-2"
-                  style={{ backgroundColor: 'rgba(138, 56, 236, 0.3)' }}
-                >
-                  <Text style={{ fontFamily: 'Rajdhani_600SemiBold', fontSize: 11, color: '#8338EC', letterSpacing: 1 }}>
-                    LVL {level}
-                  </Text>
-                </View>
-                {combo >= 5 && (
-                  <View
-                    className="px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: 'rgba(255, 190, 11, 0.3)' }}
-                  >
-                    <Text style={{ fontFamily: 'Rajdhani_600SemiBold', fontSize: 11, color: '#FFBE0B', letterSpacing: 1 }}>
-                      {combo}x
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Quit Button */}
-            <Pressable
-              onPress={() => {
-                if (hapticEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                endGame();
-              }}
-              className="w-11 h-11 rounded-full items-center justify-center"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-            >
-              <X size={22} color="#fff" />
-            </Pressable>
-          </View>
-        </SafeAreaView>
-
-        {/* Level Up Banner */}
-        {showLevelUp && <LevelUpBanner level={level} />}
-
-        {/* Game Area */}
-        <View style={{ flex: 1, marginTop: gameAreaTop }}>
-          {/* Particles */}
-          {particles.map((p) => (
-            <Particle key={p.id} x={p.x} y={p.y} color={p.color} delay={0} />
-          ))}
-
-          {!showCountdown && targets.map((target) => (
-            <TargetComponent
-              key={target.id}
-              target={target}
-              onHit={handleHit}
-              onMiss={handleMiss}
-            />
-          ))}
-
-          {/* Floating Scores */}
-          {floatingScores.map((f) => (
-            <FloatingScore key={f.id} score={f.score} x={f.x} y={f.y} isBonus={f.isBonus} />
-          ))}
-
-          {/* Combo Display */}
-          <ComboDisplay combo={combo} />
-        </View>
-      </Animated.View>
+      <PauseOverlay />
+      <VictoryModal />
     </View>
   );
 }
