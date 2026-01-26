@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Pressable, Dimensions } from 'react-native';
+import { View, Text, Pressable, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -382,14 +382,16 @@ export default function HomeScreen() {
       <FloatingGrid delay={1500} x={width - 120} y={600} size={140} />
 
       <SafeAreaView className="flex-1">
-        {/* Theme Toggle at top right */}
-        <View className="flex-row justify-end px-4 pt-2">
-          <ThemeToggle />
-        </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Theme Toggle at top right */}
+          <View className="flex-row justify-end px-4 pt-2">
+            <ThemeToggle />
+          </View>
 
-        <View className="flex-1 items-center justify-between px-8 pb-4">
-          {/* Top section with Logo */}
-          <View className="items-center">
+          <View className="flex-1 items-center px-8 pb-4">
             {/* Logo */}
             <Logo />
 
@@ -425,47 +427,47 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View className="mb-6">
+            <View className="mb-8">
               <PlayButton onPress={handleStartGame} />
             </View>
-          </View>
 
-          {/* Stats at bottom */}
-          <View className="w-full flex-row px-2">
-            <StatCard
-              label="Games Won"
-              value={stats.gamesWon}
-              icon={<Trophy size={20} color="#F59E0B" />}
-              delay={600}
-            />
-            <StatCard
-              label="Best Time"
-              value={formatTime(stats.bestTime[difficulty])}
-              icon={<Clock size={20} color="#60A5FA" />}
-              delay={650}
-            />
-            <StatCard
-              label="Streak"
-              value={stats.currentStreak}
-              icon={<Flame size={20} color="#EF4444" />}
-              delay={700}
-            />
-          </View>
-        </View>
+            {/* Stats */}
+            <View className="w-full flex-row px-2 mb-4">
+              <StatCard
+                label="Games Won"
+                value={stats.gamesWon}
+                icon={<Trophy size={20} color="#F59E0B" />}
+                delay={600}
+              />
+              <StatCard
+                label="Best Time"
+                value={formatTime(stats.bestTime[difficulty])}
+                icon={<Clock size={20} color="#60A5FA" />}
+                delay={650}
+              />
+              <StatCard
+                label="Streak"
+                value={stats.currentStreak}
+                icon={<Flame size={20} color="#EF4444" />}
+                delay={700}
+              />
+            </View>
 
-        {/* Footer */}
-        <Animated.View entering={FadeInUp.delay(800).springify()} className="pb-6 items-center">
-          <Text
-            style={{
-              fontFamily: 'Rajdhani_400Regular',
-              fontSize: 12,
-              color: colors.textDimmer,
-              textAlign: 'center',
-            }}
-          >
-            Train your mind, one cell at a time
-          </Text>
-        </Animated.View>
+            {/* Footer */}
+            <Text
+              style={{
+                fontFamily: 'Rajdhani_400Regular',
+                fontSize: 12,
+                color: colors.textDimmer,
+                textAlign: 'center',
+                marginTop: 8,
+                marginBottom: 16,
+              }}
+            >
+              Train your mind, one cell at a time
+            </Text>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
