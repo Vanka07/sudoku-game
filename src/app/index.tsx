@@ -350,12 +350,6 @@ function formatTime(seconds: number | null): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function getDayNumber(): number {
-  const now = new Date();
-  const start = new Date(2024, 0, 1);
-  return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 function DailyChallengeCard({ onPress }: { onPress: () => void }) {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
@@ -375,8 +369,6 @@ function DailyChallengeCard({ onPress }: { onPress: () => void }) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPress();
   };
-
-  const dayNumber = getDayNumber();
 
   return (
     <Animated.View entering={FadeInDown.delay(150).springify()}>
@@ -439,7 +431,7 @@ function DailyChallengeCard({ onPress }: { onPress: () => void }) {
                 >
                   {dailyChallenge.completed
                     ? `Completed in ${formatTime(dailyChallenge.bestTime)}`
-                    : `Day ${dayNumber} • Medium`
+                    : 'New puzzle every day'
                   }
                 </Text>
               </View>
