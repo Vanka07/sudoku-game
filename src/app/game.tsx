@@ -198,7 +198,7 @@ function ComboDisplay({ combo }: { combo: number }) {
       <Text style={{ fontFamily: 'Orbitron_900Black', fontSize: 48, color: '#FFBE0B' }}>
         {combo}x
       </Text>
-      <Text style={{ fontFamily: 'Rajdhani_600SemiBold', color: '#FFBE0B', fontSize: 16 }}>
+      <Text style={{ fontFamily: 'Rajdhani_600SemiBold', fontSize: 14, color: '#FFBE0B', letterSpacing: 2 }}>
         COMBO!
       </Text>
     </Animated.View>
@@ -216,7 +216,7 @@ function FloatingScore({ score, x, y }: { score: number; x: number; y: number })
         top: y - 30,
       }}
     >
-      <Text style={{ fontFamily: 'Orbitron_700Bold', color: '#00F5FF', fontSize: 24 }}>
+      <Text style={{ fontFamily: 'Orbitron_700Bold', fontSize: 24, color: '#00F5FF' }}>
         +{score}
       </Text>
     </Animated.View>
@@ -411,10 +411,10 @@ export default function GameScreen() {
 
           {/* Score */}
           <View className="items-center">
-            <Text style={{ fontFamily: 'Orbitron_700Bold', color: '#00F5FF', fontSize: 28 }}>
+            <Text style={{ fontFamily: 'Orbitron_700Bold', fontSize: 28, color: '#00F5FF' }}>
               {score}
             </Text>
-            <Text style={{ fontFamily: 'Rajdhani_500Medium', color: '#666', fontSize: 12 }}>
+            <Text style={{ fontFamily: 'Rajdhani_500Medium', fontSize: 12, color: '#666', letterSpacing: 2 }}>
               LEVEL {level}
             </Text>
           </View>

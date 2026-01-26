@@ -184,15 +184,15 @@ function StatCard({ label, value, icon, delay }: { label: string; value: string 
       className="flex-1 mx-1.5"
     >
       <View
-        className="bg-white/5 rounded-2xl p-4 items-center"
-        style={{ borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' }}
+        className="rounded-2xl p-4 items-center"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' }}
       >
         <View className="mb-2">{icon}</View>
-        <Text style={{ fontFamily: 'Orbitron_700Bold' }} className="text-white text-xl">
+        <Text style={{ fontFamily: 'Orbitron_700Bold', fontSize: 20, color: '#fff' }}>
           {value}
         </Text>
-        <Text style={{ fontFamily: 'Rajdhani_500Medium' }} className="text-gray-400 text-xs uppercase tracking-wider">
-          {label}
+        <Text style={{ fontFamily: 'Rajdhani_500Medium', fontSize: 11, color: '#888', letterSpacing: 1 }}>
+          {label.toUpperCase()}
         </Text>
       </View>
     </Animated.View>
@@ -230,7 +230,7 @@ export default function MenuScreen() {
           <View className="mb-12">
             <GlowingTitle />
             <Animated.View entering={FadeInDown.delay(300).springify()}>
-              <Text style={{ fontFamily: 'Rajdhani_500Medium' }} className="text-gray-400 text-center text-lg mt-4 tracking-widest">
+              <Text style={{ fontFamily: 'Rajdhani_500Medium', fontSize: 16, color: '#666', textAlign: 'center', letterSpacing: 3 }}>
                 TAP FAST. SCORE BIG.
               </Text>
             </Animated.View>
@@ -299,7 +299,7 @@ export default function MenuScreen() {
 
         {/* Footer */}
         <Animated.View entering={FadeInUp.delay(800).springify()} className="pb-4">
-          <Text style={{ fontFamily: 'Rajdhani_400Regular' }} className="text-gray-600 text-center text-xs">
+          <Text style={{ fontFamily: 'Rajdhani_400Regular', fontSize: 12, color: '#444', textAlign: 'center' }}>
             Tap targets before they disappear
           </Text>
         </Animated.View>
