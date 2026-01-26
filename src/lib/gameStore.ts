@@ -3,6 +3,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
+export type Difficulty = 'casual' | 'normal' | 'hard' | 'insane';
+
+export interface DifficultyConfig {
+  startingLevel: number;
+  label: string;
+  description: string;
+}
+
+export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
+  casual: { startingLevel: 1, label: 'Casual', description: 'Relaxed pace' },
+  normal: { startingLevel: 3, label: 'Normal', description: 'Balanced challenge' },
+  hard: { startingLevel: 5, label: 'Hard', description: 'Fast reactions' },
+  insane: { startingLevel: 8, label: 'Insane', description: 'Reflex masters only' },
+};
+
 export interface Target {
   id: string;
   x: number;
@@ -32,6 +47,7 @@ interface GameStore {
   combo: number;
   maxCombo: number;
   targets: Target[];
+  difficulty: Difficulty;
 
   // Stats
   stats: GameStats;
@@ -54,6 +70,7 @@ interface GameStore {
   clearTargets: () => void;
   toggleSound: () => void;
   toggleHaptic: () => void;
+  setDifficulty: (difficulty: Difficulty) => void;
   loadStats: () => Promise<void>;
   saveStats: () => Promise<void>;
 }
@@ -86,16 +103,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   stats: INITIAL_STATS,
   soundEnabled: true,
   hapticEnabled: true,
+  difficulty: 'normal',
 
   setGameState: (state) => set({ gameState: state }),
 
   startGame: () => {
-    const stats = get().stats;
+    const { stats, difficulty } = get();
+    const startingLevel = DIFFICULTY_CONFIGS[difficulty].startingLevel;
     set({
       gameState: 'playing',
       score: 0,
       lives: 3,
-      level: 1,
+      level: startingLevel,
       combo: 0,
       maxCombo: 0,
       targets: [],
@@ -169,6 +188,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
 
   toggleHaptic: () => set((state) => ({ hapticEnabled: !state.hapticEnabled })),
+
+  setDifficulty: (difficulty) => set({ difficulty }),
 
   loadStats: async () => {
     try {

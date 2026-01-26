@@ -18,7 +18,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { useGameStore } from '@/lib/gameStore';
+import { useGameStore, DIFFICULTY_CONFIGS, Difficulty } from '@/lib/gameStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -240,7 +240,7 @@ function HowToPlayHint() {
   }));
 
   return (
-    <Animated.View entering={FadeIn.delay(900)} style={animatedStyle} className="items-center mt-8">
+    <Animated.View entering={FadeIn.delay(900)} style={animatedStyle} className="items-center mt-6">
       <View className="flex-row items-center px-5 py-3 rounded-full" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
         <Target size={16} color="#00F5FF" />
         <Text style={{ fontFamily: 'Rajdhani_500Medium', fontSize: 14, color: '#888', marginLeft: 8 }}>
@@ -251,6 +251,72 @@ function HowToPlayHint() {
         <Text style={{ fontFamily: 'Rajdhani_500Medium', fontSize: 14, color: '#888', marginLeft: 8 }}>
           Avoid red X
         </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const DIFFICULTY_COLORS: Record<Difficulty, string> = {
+  casual: '#06FFA5',
+  normal: '#00F5FF',
+  hard: '#FFBE0B',
+  insane: '#FF006E',
+};
+
+function DifficultySelector() {
+  const difficulty = useGameStore((s) => s.difficulty);
+  const setDifficulty = useGameStore((s) => s.setDifficulty);
+  const difficulties: Difficulty[] = ['casual', 'normal', 'hard', 'insane'];
+
+  return (
+    <Animated.View entering={FadeInDown.delay(450).springify()} className="w-full mb-6">
+      <Text style={{ fontFamily: 'Rajdhani_600SemiBold', fontSize: 12, color: '#555', textAlign: 'center', letterSpacing: 3, marginBottom: 12 }}>
+        DIFFICULTY
+      </Text>
+      <View className="flex-row justify-center">
+        {difficulties.map((diff) => {
+          const config = DIFFICULTY_CONFIGS[diff];
+          const isSelected = difficulty === diff;
+          const color = DIFFICULTY_COLORS[diff];
+
+          return (
+            <Pressable
+              key={diff}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setDifficulty(diff);
+              }}
+              className="mx-1.5 px-4 py-2.5 rounded-xl items-center"
+              style={{
+                backgroundColor: isSelected ? `${color}20` : 'rgba(255, 255, 255, 0.04)',
+                borderWidth: 1.5,
+                borderColor: isSelected ? color : 'rgba(255, 255, 255, 0.08)',
+                minWidth: 75,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: 'Orbitron_600SemiBold',
+                  fontSize: 11,
+                  color: isSelected ? color : '#666',
+                  letterSpacing: 0.5,
+                }}
+              >
+                {config.label.toUpperCase()}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: 'Rajdhani_400Regular',
+                  fontSize: 9,
+                  color: isSelected ? `${color}99` : '#444',
+                  marginTop: 2,
+                }}
+              >
+                LV.{config.startingLevel}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </Animated.View>
   );
@@ -294,9 +360,12 @@ export default function MenuScreen() {
           </View>
 
           {/* Play Button */}
-          <View className="mb-10">
+          <View className="mb-8">
             <PlayButton onPress={handlePlay} />
           </View>
+
+          {/* Difficulty Selector */}
+          <DifficultySelector />
 
           {/* Stats */}
           <Animated.View entering={FadeInDown.delay(500).springify()} className="w-full flex-row mb-4">
