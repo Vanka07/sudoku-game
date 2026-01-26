@@ -1,60 +1,51 @@
-# SkillStake
+# Reflex Rush
 
-A peer-to-peer accountability platform where you stake money on your goals and compete against others. Put your money where your mouth is.
+A minimalist reflex arcade game. Tap glowing targets before they disappear. Build combos, avoid danger targets, and chase high scores.
+
+## Gameplay
+
+- **Tap Targets**: Colored orbs appear randomly - tap them before they fade
+- **Score Points**: Smaller targets = more points. Bonus (yellow lightning) targets = 50 points
+- **Avoid Danger**: Red X targets cost you a life if tapped
+- **Build Combos**: Hit consecutive targets to build multipliers (5+ = 1.5x, 10+ = 2x, etc.)
+- **Level Up**: Every 200 points increases difficulty - faster spawns, shorter lifetimes
+- **3 Lives**: Miss a target or tap a danger target and you lose a life
 
 ## Features
 
-- **Home Dashboard**: View your balance, active stakes, win streak, and stats at a glance
-- **Explore Challenges**: Browse 10+ challenge categories including fitness, learning, health, productivity, and creative
-- **Stake Creation**: Choose your stake amount, get matched with an opponent, and lock in your commitment
-- **Proof Submission**: Submit photo evidence with AI verification for challenge completion
-- **Leaderboard**: See top performers and trending challenges
-- **Profile**: Track your stats, achievements, and manage settings
-
-## How It Works
-
-1. **Browse Challenges** - Find a goal you want to achieve (running streak, learn Spanish, no social media, etc.)
-2. **Stake Your Money** - Put $10-$500 on the line as motivation
-3. **Get Matched** - You're paired with someone betting against you
-4. **Complete the Challenge** - Follow the rules for the duration
-5. **Submit Proof** - Provide evidence of completion
-6. **Win or Lose** - Winner takes 80% of the total pot (10% platform fee)
+- Neon cyberpunk aesthetic with glowing targets
+- Satisfying haptic feedback on every tap
+- Persistent high score tracking
+- Combo system with visual feedback
+- 10 difficulty levels
+- Animated score counter on game over
 
 ## App Structure
 
 ```
 src/
   app/
-    (tabs)/
-      _layout.tsx      # Tab navigation
-      index.tsx        # Home screen
-      challenges.tsx   # Explore challenges
-      leaderboard.tsx  # Rankings & trending
-      profile.tsx      # User profile & settings
-    challenge-detail.tsx  # Challenge info & stake selection
-    create-stake.tsx      # Opponent matching flow
-    submit-proof.tsx      # Proof upload & verification
-    _layout.tsx           # Root layout with fonts
+    _layout.tsx    # Root layout with fonts
+    index.tsx      # Main menu screen
+    game.tsx       # Core gameplay
+    gameover.tsx   # Results screen
   lib/
-    store.ts          # Zustand store for app state
-    cn.ts             # Tailwind class merge utility
+    gameStore.ts   # Zustand store for game state
 ```
 
 ## Tech Stack
 
 - Expo SDK 53 with React Native
-- Expo Router for file-based navigation
+- Expo Router for navigation
 - Zustand for state management
-- NativeWind (Tailwind) for styling
-- React Native Reanimated for animations
-- Expo Haptics for feedback
-- Outfit + Sora fonts for typography
+- React Native Reanimated for 60fps animations
+- Expo Haptics for tactile feedback
+- Orbitron + Rajdhani fonts for arcade aesthetic
 
 ## Color Palette
 
-- Primary Green: `#00FF94`
-- Accent Cyan: `#00D9FF`
-- Warning Yellow: `#FFB800`
-- Danger Red: `#FF4757`
-- Background: `#0A0A0F`
-- Card: `#12121A`
+- Cyan: `#00F5FF` (primary, score)
+- Hot Pink: `#FF006E` (danger, lives)
+- Yellow: `#FFBE0B` (bonus, combo)
+- Purple: `#8338EC` (accent)
+- Background: `#050508`

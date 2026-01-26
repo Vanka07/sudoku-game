@@ -8,7 +8,9 @@
         "@bottom-tabs/react-navigation": "^0.12.2",
         "@codeherence/react-native-header": "^1.0.0",
         "@expo-google-fonts/dm-sans": "^0.4.2",
+        "@expo-google-fonts/orbitron": "^0.4.2",
         "@expo-google-fonts/outfit": "^0.4.3",
+        "@expo-google-fonts/rajdhani": "^0.4.1",
         "@expo-google-fonts/sora": "^0.4.2",
         "@expo-google-fonts/space-grotesk": "^0.4.1",
         "@expo/html-elements": "^0.13.7",
@@ -410,7 +412,11 @@
 
     "@expo-google-fonts/dm-sans": ["@expo-google-fonts/dm-sans@0.4.2", "", {}, "sha512-e/fLH5aCJzkEenz7axvEn8N7IJAKhUwNjIxS75h9j+Ip1M9S7d22M19gJN3A7QW4egVkBJRyQh1hQFhngQn9yA=="],
 
+    "@expo-google-fonts/orbitron": ["@expo-google-fonts/orbitron@0.4.2", "", {}, "sha512-lp92oZ6FF1tA9dzJxKYPHae8hVxfVJzh5jRvjPCN8P1kkF615n/mq0U4ZQ7EXiEJvO7Cpwg+lZlkSbRw7CiDug=="],
+
     "@expo-google-fonts/outfit": ["@expo-google-fonts/outfit@0.4.3", "", {}, "sha512-2uQmDVJencWLllxds6SG92E+SjxyZfvg7eZKZ5XLHggmm5AuUyQK7lzMAFOUzT6kheq2kJ7BAiubMdjKT32fJg=="],
+
+    "@expo-google-fonts/rajdhani": ["@expo-google-fonts/rajdhani@0.4.1", "", {}, "sha512-AQS+20ymwULMvlT9AJlsrgjK2KSI6jW+WenVeFdZgmjC2ZYbWQSotm6PQe9tZx74mBvw+J6X6WorW2B+ISmncg=="],
 
     "@expo-google-fonts/sora": ["@expo-google-fonts/sora@0.4.2", "", {}, "sha512-X86Kl1cfObcSUzTLIbtmrPCLRlIbCNh0uBOo8bjmXb8gWgVVhnI8CZJEK2btsdq85JPn5k4P6sbV9JLbAm7dqQ=="],
 
