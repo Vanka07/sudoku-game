@@ -382,12 +382,17 @@ export default function HomeScreen() {
       <FloatingGrid delay={1500} x={width - 120} y={600} size={140} />
 
       <SafeAreaView className="flex-1">
-        <View className="flex-1 items-center justify-center px-8">
+        {/* Theme Toggle at top right */}
+        <View className="flex-row justify-end px-4 pt-2">
+          <ThemeToggle />
+        </View>
+
+        <View className="flex-1 items-center px-8" style={{ paddingTop: 8 }}>
           {/* Logo */}
           <Logo />
 
           {/* Spacer */}
-          <View className="h-10" />
+          <View className="h-6" />
 
           {/* Difficulty Selection */}
           <Animated.View entering={FadeInDown.delay(200).springify()} className="mb-2">
@@ -445,16 +450,14 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Footer with Theme Toggle */}
-        <Animated.View entering={FadeInUp.delay(800).springify()} className="pb-4 items-center">
-          <ThemeToggle />
+        {/* Footer */}
+        <Animated.View entering={FadeInUp.delay(800).springify()} className="pb-6 items-center">
           <Text
             style={{
               fontFamily: 'Rajdhani_400Regular',
               fontSize: 12,
               color: colors.textDimmer,
               textAlign: 'center',
-              marginTop: 12,
             }}
           >
             Train your mind, one cell at a time
