@@ -4,10 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   Pause,
+  Play,
   Lightbulb,
   Pencil,
   Eraser,
   Home,
+  Undo2,
+  Trophy,
+  RotateCcw,
 } from 'lucide-react-native';
 import Animated, {
   FadeIn,
@@ -18,6 +22,10 @@ import Animated, {
   withSpring,
   withTiming,
   withSequence,
+  withRepeat,
+  withDelay,
+  Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSudokuStore, DIFFICULTY_CONFIG, Cell } from '@/lib/sudokuStore';
@@ -363,6 +371,7 @@ function ActionBar() {
   const toggleNoteMode = useSudokuStore((s) => s.toggleNoteMode);
   const clearCell = useSudokuStore((s) => s.clearCell);
   const useHint = useSudokuStore((s) => s.useHint);
+  const undo = useSudokuStore((s) => s.undo);
   const hintsRemaining = useSudokuStore((s) => s.hintsRemaining);
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
@@ -372,6 +381,11 @@ function ActionBar() {
       entering={FadeInUp.delay(300).springify()}
       className="flex-row justify-center mt-6"
     >
+      <ActionButton
+        icon={<Undo2 size={22} color={colors.textMuted} />}
+        label="Undo"
+        onPress={undo}
+      />
       <ActionButton
         icon={<Pencil size={22} color={noteMode ? colors.accentLight : colors.textMuted} />}
         label="Notes"
@@ -481,11 +495,105 @@ function Header() {
   );
 }
 
+function ConfettiPiece({ delay, x }: { delay: number; x: number }) {
+  const translateY = useSharedValue(-50);
+  const translateX = useSharedValue(0);
+  const rotate = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  const colors = ['#4ADE80', '#60A5FA', '#F59E0B', '#EF4444', '#A78BFA', '#F472B6'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  const size = 8 + Math.random() * 8;
+
+  useEffect(() => {
+    translateY.value = withDelay(
+      delay,
+      withTiming(800, { duration: 3000, easing: Easing.out(Easing.quad) })
+    );
+    translateX.value = withDelay(
+      delay,
+      withTiming((Math.random() - 0.5) * 200, { duration: 3000 })
+    );
+    rotate.value = withDelay(
+      delay,
+      withTiming(360 * (Math.random() > 0.5 ? 1 : -1) * 3, { duration: 3000 })
+    );
+    opacity.value = withDelay(
+      delay + 2000,
+      withTiming(0, { duration: 1000 })
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: translateY.value },
+      { translateX: translateX.value },
+      { rotate: `${rotate.value}deg` },
+    ],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        animatedStyle,
+        {
+          position: 'absolute',
+          left: x,
+          top: 0,
+          width: size,
+          height: size,
+          backgroundColor: color,
+          borderRadius: Math.random() > 0.5 ? size / 2 : 2,
+        },
+      ]}
+    />
+  );
+}
+
+function Confetti() {
+  const pieces = useMemo(() => {
+    return Array(40)
+      .fill(0)
+      .map((_, i) => ({
+        id: i,
+        x: Math.random() * width,
+        delay: Math.random() * 500,
+      }));
+  }, []);
+
+  return (
+    <View className="absolute inset-0 overflow-hidden pointer-events-none">
+      {pieces.map((piece) => (
+        <ConfettiPiece key={piece.id} delay={piece.delay} x={piece.x} />
+      ))}
+    </View>
+  );
+}
+
 function PauseOverlay() {
   const isPaused = useSudokuStore((s) => s.isPaused);
   const resumeGame = useSudokuStore((s) => s.resumeGame);
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (isPaused) {
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+    }
+  }, [isPaused]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   if (!isPaused) return null;
 
@@ -502,16 +610,24 @@ function PauseOverlay() {
         }}
         className="items-center"
       >
-        <View
-          className="w-24 h-24 rounded-full items-center justify-center mb-6"
-          style={{
-            backgroundColor: colors.accentBg,
-            borderWidth: 2,
-            borderColor: colors.accentBorder,
-          }}
+        <Animated.View
+          style={[
+            animatedStyle,
+            {
+              width: 96,
+              height: 96,
+              borderRadius: 48,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 24,
+              backgroundColor: colors.accentBg,
+              borderWidth: 2,
+              borderColor: colors.accentBorder,
+            },
+          ]}
         >
-          <Pause size={40} color={colors.accentLight} />
-        </View>
+          <Play size={44} color={colors.accentLight} style={{ marginLeft: 4 }} />
+        </Animated.View>
         <Text
           style={{
             fontFamily: 'Rajdhani_700Bold',
@@ -550,6 +666,50 @@ function VictoryModal() {
 
   const isGameOver = mistakes >= maxMistakes;
 
+  const trophyScale = useSharedValue(0);
+  const trophyRotate = useSharedValue(-15);
+  const shakeX = useSharedValue(0);
+
+  useEffect(() => {
+    if (isComplete && !isGameOver) {
+      // Trophy bounce animation
+      trophyScale.value = withSequence(
+        withTiming(1.2, { duration: 300, easing: Easing.out(Easing.back(2)) }),
+        withSpring(1, { damping: 8 })
+      );
+      trophyRotate.value = withSequence(
+        withTiming(15, { duration: 150 }),
+        withTiming(-10, { duration: 150 }),
+        withTiming(5, { duration: 150 }),
+        withSpring(0)
+      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (isComplete && isGameOver) {
+      // Shake animation for game over
+      shakeX.value = withSequence(
+        withTiming(-10, { duration: 50 }),
+        withTiming(10, { duration: 50 }),
+        withTiming(-10, { duration: 50 }),
+        withTiming(10, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(5, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }, [isComplete, isGameOver]);
+
+  const trophyStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: trophyScale.value },
+      { rotate: `${trophyRotate.value}deg` },
+    ],
+  }));
+
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
+
   if (!isComplete) return null;
 
   return (
@@ -558,44 +718,85 @@ function VictoryModal() {
       className="absolute inset-0 items-center justify-center px-8"
       style={{ backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.97)' : 'rgba(248, 250, 252, 0.97)' }}
     >
-      <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center">
-        <Text
-          style={{
-            fontFamily: 'Rajdhani_700Bold',
-            fontSize: 36,
-            color: isGameOver ? '#EF4444' : '#4ADE80',
-            letterSpacing: 4,
-            marginBottom: 8,
-          }}
-        >
-          {isGameOver ? 'GAME OVER' : 'COMPLETE!'}
-        </Text>
+      {!isGameOver && <Confetti />}
 
-        {!isGameOver && (
-          <>
-            <Text
+      <Animated.View style={shakeStyle}>
+        <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center">
+          {/* Trophy or X icon */}
+          {!isGameOver ? (
+            <Animated.View
+              style={[
+                trophyStyle,
+                {
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: '#FEF3C7',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 20,
+                  borderWidth: 3,
+                  borderColor: '#F59E0B',
+                },
+              ]}
+            >
+              <Trophy size={40} color="#F59E0B" fill="#FCD34D" />
+            </Animated.View>
+          ) : (
+            <View
               style={{
-                fontFamily: 'Rajdhani_500Medium',
-                fontSize: 16,
-                color: colors.textMuted,
-                marginBottom: 24,
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: '#FEE2E2',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 20,
+                borderWidth: 3,
+                borderColor: '#EF4444',
               }}
             >
-              You solved it in {formatTime(elapsedTime)}
-            </Text>
+              <RotateCcw size={40} color="#EF4444" />
+            </View>
+          )}
 
-            <View className="flex-row mb-8">
-              <View className="items-center mx-4">
-                <Text
-                  style={{
-                    fontFamily: 'Rajdhani_700Bold',
-                    fontSize: 32,
-                    color: colors.text,
-                  }}
-                >
-                  {formatTime(elapsedTime)}
-                </Text>
-                <Text
+          <Text
+            style={{
+              fontFamily: 'Rajdhani_700Bold',
+              fontSize: 36,
+              color: isGameOver ? '#EF4444' : '#4ADE80',
+              letterSpacing: 4,
+              marginBottom: 8,
+            }}
+          >
+            {isGameOver ? 'GAME OVER' : 'COMPLETE!'}
+          </Text>
+
+          {!isGameOver && (
+            <>
+              <Text
+                style={{
+                  fontFamily: 'Rajdhani_500Medium',
+                  fontSize: 16,
+                  color: colors.textMuted,
+                  marginBottom: 24,
+                }}
+              >
+                You solved it in {formatTime(elapsedTime)}
+              </Text>
+
+              <View className="flex-row mb-8">
+                <View className="items-center mx-4">
+                  <Text
+                    style={{
+                      fontFamily: 'Rajdhani_700Bold',
+                      fontSize: 32,
+                      color: colors.text,
+                    }}
+                  >
+                    {formatTime(elapsedTime)}
+                  </Text>
+                  <Text
                   style={{
                     fontFamily: 'Rajdhani_400Regular',
                     fontSize: 12,
@@ -674,6 +875,7 @@ function VictoryModal() {
             </Text>
           </Pressable>
         </View>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   );

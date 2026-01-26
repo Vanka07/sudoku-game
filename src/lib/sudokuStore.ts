@@ -33,12 +33,19 @@ export interface GameState {
   };
 }
 
+interface HistoryEntry {
+  board: Cell[][];
+  mistakes: number;
+}
+
 interface SudokuStore extends GameState {
+  history: HistoryEntry[];
   selectCell: (row: number, col: number) => void;
   enterNumber: (num: number) => void;
   clearCell: () => void;
   toggleNoteMode: () => void;
   useHint: () => void;
+  undo: () => void;
   startNewGame: (difficulty: Difficulty) => void;
   pauseGame: () => void;
   resumeGame: () => void;
@@ -200,6 +207,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
   elapsedTime: 0,
   noteMode: false,
   stats: initialStats,
+  history: [] as HistoryEntry[],
 
   selectCell: (row, col) => {
     const { board, isPlaying, isPaused } = get();
@@ -221,13 +229,17 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
   },
 
   enterNumber: (num) => {
-    const { selectedCell, board, solution, noteMode, mistakes, maxMistakes, isPlaying, isPaused } = get();
+    const { selectedCell, board, solution, noteMode, mistakes, maxMistakes, isPlaying, isPaused, history } = get();
     if (!selectedCell || !isPlaying || isPaused) return;
 
     const { row, col } = selectedCell;
     const cell = board[row][col];
 
     if (cell.isGiven) return;
+
+    // Save current state to history before making changes
+    const boardCopy = board.map(r => r.map(c => ({ ...c, notes: [...c.notes] })));
+    const newHistory = [...history, { board: boardCopy, mistakes }].slice(-20); // Keep last 20 moves
 
     const newBoard = board.map(r => r.map(c => ({ ...c })));
 
@@ -255,11 +267,11 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
 
         if (newMistakes >= maxMistakes) {
           // Game over
-          set({ board: newBoard, mistakes: newMistakes, isPlaying: false, isComplete: true });
+          set({ board: newBoard, mistakes: newMistakes, isPlaying: false, isComplete: true, history: newHistory });
           return;
         }
 
-        set({ board: newBoard, mistakes: newMistakes });
+        set({ board: newBoard, mistakes: newMistakes, history: newHistory });
         return;
       } else {
         newBoard[row][col].isError = false;
@@ -290,6 +302,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
         if (!complete) break;
       }
 
+
       if (complete) {
         const { stats, difficulty, elapsedTime } = get();
         const newStats = { ...stats };
@@ -303,13 +316,13 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
           newStats.bestTime[difficulty] = elapsedTime;
         }
 
-        set({ board: newBoard, isComplete: true, isPlaying: false, stats: newStats });
+        set({ board: newBoard, isComplete: true, isPlaying: false, stats: newStats, history: newHistory });
         get().saveStats();
         return;
       }
     }
 
-    set({ board: newBoard });
+    set({ board: newBoard, history: newHistory });
   },
 
   clearCell: () => {
@@ -383,6 +396,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       hintsRemaining: 3,
       elapsedTime: 0,
       noteMode: false,
+      history: [],
     });
   },
 
@@ -400,6 +414,18 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
 
   setDifficulty: (difficulty) => {
     set({ difficulty });
+  },
+
+  undo: () => {
+    const { history, isPlaying, isPaused } = get();
+    if (!isPlaying || isPaused || history.length === 0) return;
+
+    const lastState = history[history.length - 1];
+    set({
+      board: lastState.board,
+      mistakes: lastState.mistakes,
+      history: history.slice(0, -1),
+    });
   },
 
   loadStats: async () => {

@@ -1,6 +1,6 @@
 # Sudoku Minimalist
 
-A clean, elegant Sudoku puzzle game with a dark theme and smooth animations.
+A clean, elegant Sudoku puzzle game with dark/light themes and smooth animations.
 
 ## Features
 
@@ -16,6 +16,7 @@ A clean, elegant Sudoku puzzle game with a dark theme and smooth animations.
 - **Notes Mode**: Toggle pencil marks for possible candidates
 - **Hints**: 3 hints per game to reveal correct numbers
 - **Erase**: Clear a cell's value or notes
+- **Undo**: Revert your last move (up to 20 moves)
 - **Auto-Highlight**: Related cells highlight when you select
 
 ### Smart Features
@@ -25,6 +26,13 @@ A clean, elegant Sudoku puzzle game with a dark theme and smooth animations.
 - **Auto-Note Removal**: Notes clear when number is placed
 - **Timer**: Track your solve time
 - **Pause**: Hide the board and pause the timer
+
+### Visual Polish
+- **Victory Confetti**: Celebration animation on puzzle completion
+- **Trophy Animation**: Bouncing trophy icon on win
+- **Shake Effect**: Screen shake on game over
+- **Animated Pause**: Pulsing play button to resume
+- **Dark/Light Themes**: Toggle between themes
 
 ### Statistics
 - Games won
@@ -41,6 +49,7 @@ src/
     game.tsx       # Sudoku game board and controls
   lib/
     sudokuStore.ts # Zustand store with puzzle generation
+    themeStore.ts  # Theme state management
 ```
 
 ## Tech Stack
@@ -60,4 +69,5 @@ src/
 - Blue: `#60A5FA` (medium)
 - Amber: `#F59E0B` (hard/hints)
 - Red: `#EF4444` (errors/expert)
-- Background: `#0A0A0F`
+- Background Dark: `#0A0A0F`
+- Background Light: `#F8FAFC`
