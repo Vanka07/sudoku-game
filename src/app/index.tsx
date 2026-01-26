@@ -44,24 +44,22 @@ function ThemeToggle() {
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(50).springify()} className="absolute top-4 right-4">
-      <AnimatedPressable style={animatedStyle} onPress={handlePress}>
-        <View
-          className="w-11 h-11 rounded-full items-center justify-center"
-          style={{
-            backgroundColor: colors.backgroundSecondary,
-            borderWidth: 1,
-            borderColor: colors.border,
-          }}
-        >
-          {theme === 'dark' ? (
-            <Sun size={20} color={colors.textSecondary} />
-          ) : (
-            <Moon size={20} color={colors.textSecondary} />
-          )}
-        </View>
-      </AnimatedPressable>
-    </Animated.View>
+    <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+      <View
+        className="w-11 h-11 rounded-full items-center justify-center"
+        style={{
+          backgroundColor: colors.backgroundSecondary,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        {theme === 'dark' ? (
+          <Sun size={20} color={colors.textSecondary} />
+        ) : (
+          <Moon size={20} color={colors.textSecondary} />
+        )}
+      </View>
+    </AnimatedPressable>
   );
 }
 
@@ -377,11 +375,6 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      {/* Theme Toggle */}
-      <SafeAreaView className="absolute top-0 right-0 z-10">
-        <ThemeToggle />
-      </SafeAreaView>
-
       {/* Floating decorative grids */}
       <FloatingGrid delay={0} x={-40} y={80} size={120} />
       <FloatingGrid delay={500} x={width - 80} y={200} size={100} />
@@ -452,14 +445,16 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Footer */}
-        <Animated.View entering={FadeInUp.delay(800).springify()} className="pb-4">
+        {/* Footer with Theme Toggle */}
+        <Animated.View entering={FadeInUp.delay(800).springify()} className="pb-4 items-center">
+          <ThemeToggle />
           <Text
             style={{
               fontFamily: 'Rajdhani_400Regular',
               fontSize: 12,
               color: colors.textDimmer,
               textAlign: 'center',
+              marginTop: 12,
             }}
           >
             Train your mind, one cell at a time
