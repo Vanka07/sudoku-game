@@ -4,6 +4,12 @@ const expoConfig = require("eslint-config-expo/flat");
 const pluginQuery = require("@tanstack/eslint-plugin-query");
 
 module.exports = defineConfig([
+  {
+    ignores: [
+      "dist/**",
+      "dist/*",
+    ],
+  },
   expoConfig,
   {
     ignores: [
