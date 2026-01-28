@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, Pressable, Dimensions } from 'react-native';
+import { View, Text, Pressable, Dimensions, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -12,6 +12,7 @@ import {
   Undo2,
   Trophy,
   RotateCcw,
+  Share2,
 } from 'lucide-react-native';
 import Animated, {
   FadeIn,
@@ -117,6 +118,12 @@ function SudokuCell({
     ? colors.cellGivenText
     : colors.cellInputText;
 
+  const cellLabel = cell.value !== 0
+    ? `Row ${row + 1}, Column ${col + 1}, value ${cell.value}`
+    : cell.notes.length > 0
+    ? `Row ${row + 1}, Column ${col + 1}, notes ${cell.notes.join(', ')}`
+    : `Row ${row + 1}, Column ${col + 1}, empty`;
+
   return (
     <AnimatedPressable
       style={[
@@ -135,6 +142,8 @@ function SudokuCell({
         },
       ]}
       onPress={handlePress}
+      accessibilityLabel={cellLabel}
+      accessibilityRole="button"
     >
       {/* Glow effect for correct answers */}
       {cell.isCorrect && !cell.isGiven && (
@@ -215,6 +224,7 @@ function SudokuBoard() {
         borderColor: colors.textDim,
         overflow: 'hidden',
       }}
+      accessibilityLabel="Sudoku game board"
     >
       {board.map((row, rowIndex) => (
         <View key={rowIndex} className="flex-row">
@@ -266,7 +276,12 @@ function NumberButton({
   };
 
   return (
-    <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+    <AnimatedPressable
+      style={animatedStyle}
+      onPress={handlePress}
+      accessibilityLabel={`Enter number ${num}${isDisabled ? ', all placed' : ''}`}
+      accessibilityRole="button"
+    >
       <View
         className="items-center justify-center mx-1"
         style={{
@@ -316,6 +331,7 @@ function NumberPad() {
     <Animated.View
       entering={FadeInUp.delay(200).springify()}
       className="flex-row justify-center mt-4"
+      accessibilityLabel="Number pad"
     >
       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
         <NumberButton
@@ -360,7 +376,13 @@ function ActionButton({
   };
 
   return (
-    <AnimatedPressable style={animatedStyle} onPress={handlePress} className="items-center mx-3">
+    <AnimatedPressable
+      style={animatedStyle}
+      onPress={handlePress}
+      className="items-center mx-3"
+      accessibilityLabel={`${label}${badge !== undefined && badge > 0 ? `, ${badge} remaining` : ''}${isActive ? ', active' : ''}`}
+      accessibilityRole="button"
+    >
       <View
         className="w-14 h-14 rounded-2xl items-center justify-center relative"
         style={{
@@ -419,6 +441,7 @@ function ActionBar() {
     <Animated.View
       entering={FadeInUp.delay(300).springify()}
       className="flex-row justify-center mt-6"
+      accessibilityLabel="Game actions"
     >
       <ActionButton
         icon={<Undo2 size={22} color={colors.textMuted} />}
@@ -471,6 +494,8 @@ function Header() {
           }}
           className="w-10 h-10 rounded-full items-center justify-center"
           style={{ backgroundColor: colors.backgroundSecondary }}
+          accessibilityLabel="Go home"
+          accessibilityRole="button"
         >
           <Home size={20} color={colors.textMuted} />
         </Pressable>
@@ -499,6 +524,7 @@ function Header() {
               color: colors.text,
               letterSpacing: 1,
             }}
+            accessibilityLabel={`Time elapsed: ${formatTime(elapsedTime)}`}
           >
             {formatTime(elapsedTime)}
           </Text>
@@ -511,13 +537,18 @@ function Header() {
           }}
           className="w-10 h-10 rounded-full items-center justify-center"
           style={{ backgroundColor: colors.backgroundSecondary }}
+          accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
+          accessibilityRole="button"
         >
           <Pause size={20} color={colors.textMuted} />
         </Pressable>
       </View>
 
       {/* Mistakes indicator */}
-      <View className="flex-row justify-center mt-3">
+      <View
+        className="flex-row justify-center mt-3"
+        accessibilityLabel={`${mistakes} of ${maxMistakes} mistakes`}
+      >
         {Array(maxMistakes)
           .fill(0)
           .map((_, i) => (
@@ -648,6 +679,8 @@ function PauseOverlay() {
           resumeGame();
         }}
         className="items-center"
+        accessibilityLabel="Resume game"
+        accessibilityRole="button"
       >
         <Animated.View
           style={[
@@ -748,6 +781,19 @@ function VictoryModal() {
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
+
+  const handleShare = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const config = DIFFICULTY_CONFIG[difficulty];
+    const timeStr = formatTime(elapsedTime);
+    try {
+      await Share.share({
+        message: `🎯 I solved a ${config.label} Sudoku in ${timeStr}! Can you beat my time? #SudokuMinimalist`,
+      });
+    } catch (e) {
+      // User cancelled or error — do nothing
+    }
+  };
 
   if (!isComplete) return null;
 
@@ -875,12 +921,14 @@ function VictoryModal() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.back();
             }}
-            className="px-8 py-4 rounded-xl mr-3"
+            className="px-6 py-4 rounded-xl mr-3"
             style={{
               backgroundColor: colors.backgroundSecondary,
               borderWidth: 1,
               borderColor: colors.border,
             }}
+            accessibilityLabel="Go home"
+            accessibilityRole="button"
           >
             <Text
               style={{
@@ -893,15 +941,44 @@ function VictoryModal() {
             </Text>
           </Pressable>
 
+          {!isGameOver && (
+            <Pressable
+              onPress={handleShare}
+              className="px-6 py-4 rounded-xl mr-3"
+              style={{
+                backgroundColor: colors.backgroundSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+              accessibilityLabel="Share your score"
+              accessibilityRole="button"
+            >
+              <View className="flex-row items-center">
+                <Share2 size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text
+                  style={{
+                    fontFamily: 'Rajdhani_600SemiBold',
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  SHARE
+                </Text>
+              </View>
+            </Pressable>
+          )}
+
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               startNewGame(difficulty);
             }}
-            className="px-8 py-4 rounded-xl"
+            className="px-6 py-4 rounded-xl"
             style={{
               backgroundColor: colors.accent,
             }}
+            accessibilityLabel="Start new game"
+            accessibilityRole="button"
           >
             <Text
               style={{

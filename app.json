@@ -1,16 +1,30 @@
 {
   "expo": {
-    "name": "vibecode",
-    "slug": "vibecode",
+    "name": "Sudoku Minimalist",
+    "slug": "sudoku-minimalist",
     "scheme": "vibecode",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.vanka07.sudokuMinimalist",
+      "buildNumber": "1",
       "supportsTablet": true
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0F"
+      },
+      "package": "com.vanka07.sudokuMinimalist",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true
     },
     "plugins": ["expo-router"],

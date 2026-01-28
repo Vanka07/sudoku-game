@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Grid3x3, Trophy, Clock, Flame, ChevronRight, Sun, Moon, Calendar, CheckCircle2, Zap } from 'lucide-react-native';
+import { Grid3x3, Trophy, Clock, Flame, ChevronRight, Sun, Moon, Calendar, CheckCircle2, Zap, Settings } from 'lucide-react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -19,6 +19,9 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { useSudokuStore, DIFFICULTY_CONFIG, Difficulty } from '@/lib/sudokuStore';
 import { useThemeStore, themes } from '@/lib/themeStore';
+import { useSettingsStore } from '@/lib/settingsStore';
+import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal';
+import { SettingsModal } from '@/components/SettingsModal';
 
 const { width } = Dimensions.get('window');
 
@@ -44,7 +47,12 @@ function ThemeToggle() {
   };
 
   return (
-    <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+    <AnimatedPressable
+      style={animatedStyle}
+      onPress={handlePress}
+      accessibilityLabel={`Toggle ${theme === 'dark' ? 'light' : 'dark'} theme`}
+      accessibilityRole="button"
+    >
       <View
         className="w-11 h-11 rounded-full items-center justify-center"
         style={{
@@ -58,6 +66,45 @@ function ThemeToggle() {
         ) : (
           <Moon size={20} color={colors.textSecondary} />
         )}
+      </View>
+    </AnimatedPressable>
+  );
+}
+
+function SettingsButton({ onPress }: { onPress: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+  const colors = themes[theme];
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withTiming(0.9, { duration: 50 }),
+      withSpring(1, { damping: 15 })
+    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  return (
+    <AnimatedPressable
+      style={[animatedStyle, { marginRight: 8 }]}
+      onPress={handlePress}
+      accessibilityLabel="Open settings"
+      accessibilityRole="button"
+    >
+      <View
+        className="w-11 h-11 rounded-full items-center justify-center"
+        style={{
+          backgroundColor: colors.backgroundSecondary,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Settings size={20} color={colors.textSecondary} />
       </View>
     </AnimatedPressable>
   );
@@ -200,7 +247,12 @@ function DifficultyButton({
 
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify()}>
-      <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+      <AnimatedPressable
+        style={animatedStyle}
+        onPress={handlePress}
+        accessibilityLabel={`${config.label} difficulty${isSelected ? ', selected' : ''}`}
+        accessibilityRole="button"
+      >
         <View
           className="px-5 py-3 rounded-xl flex-row items-center justify-between"
           style={{
@@ -262,7 +314,12 @@ function PlayButton({ onPress }: { onPress: () => void }) {
 
   return (
     <Animated.View entering={FadeInUp.delay(500).springify()}>
-      <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+      <AnimatedPressable
+        style={animatedStyle}
+        onPress={handlePress}
+        accessibilityLabel="Start new game"
+        accessibilityRole="button"
+      >
         <LinearGradient
           colors={['#6366F1', '#8B5CF6']}
           start={{ x: 0, y: 0 }}
@@ -317,6 +374,7 @@ function StatCard({
           borderWidth: 1,
           borderColor: colors.borderLight,
         }}
+        accessibilityLabel={`${label}: ${value}`}
       >
         <View className="mb-1">{icon}</View>
         <Text
@@ -372,7 +430,16 @@ function DailyChallengeCard({ onPress }: { onPress: () => void }) {
 
   return (
     <Animated.View entering={FadeInDown.delay(150).springify()}>
-      <AnimatedPressable style={animatedStyle} onPress={handlePress}>
+      <AnimatedPressable
+        style={animatedStyle}
+        onPress={handlePress}
+        accessibilityLabel={
+          dailyChallenge.completed
+            ? `Daily challenge completed in ${formatTime(dailyChallenge.bestTime)}`
+            : 'Start daily challenge'
+        }
+        accessibilityRole="button"
+      >
         <LinearGradient
           colors={dailyChallenge.completed
             ? (theme === 'dark' ? ['#064E3B', '#065F46'] : ['#D1FAE5', '#A7F3D0'])
@@ -486,13 +553,18 @@ export default function HomeScreen() {
   const loadDailyChallenge = useSudokuStore((s) => s.loadDailyChallenge);
   const theme = useThemeStore((s) => s.theme);
   const loadTheme = useThemeStore((s) => s.loadTheme);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
   const colors = themes[theme];
+
+  const { showOnboarding, dismissOnboarding } = useOnboarding();
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     loadStats();
     loadTheme();
     loadDailyChallenge();
     loadGameState();
+    loadSettings();
   }, []);
 
   const handleStartGame = () => {
@@ -524,8 +596,9 @@ export default function HomeScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Theme Toggle at top right */}
+          {/* Top bar: Settings + Theme Toggle */}
           <View className="flex-row justify-end px-4 pt-2">
+            <SettingsButton onPress={() => setShowSettings(true)} />
             <ThemeToggle />
           </View>
 
@@ -553,6 +626,8 @@ export default function HomeScreen() {
                     borderWidth: 1,
                     borderColor: colors.accentBorder,
                   }}
+                  accessibilityLabel="Continue current game"
+                  accessibilityRole="button"
                 >
                   <Text
                     style={{
@@ -642,6 +717,12 @@ export default function HomeScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal visible={showOnboarding} onDismiss={dismissOnboarding} />
+
+      {/* Settings Modal */}
+      <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
     </View>
   );
 }
