@@ -131,23 +131,23 @@ function Logo() {
   const colors = themes[theme];
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center mb-2">
-      <View className="flex-row items-center justify-center mb-3">
+    <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center mb-1">
+      <View className="flex-row items-center justify-center mb-1">
         <View
-          className="w-16 h-16 rounded-2xl items-center justify-center"
+          className="w-12 h-12 rounded-xl items-center justify-center"
           style={{
             backgroundColor: colors.accentBg,
             borderWidth: 1,
             borderColor: colors.accentBorder,
           }}
         >
-          <Grid3x3 size={32} color={colors.accentLight} strokeWidth={1.5} />
+          <Grid3x3 size={24} color={colors.accentLight} strokeWidth={1.5} />
         </View>
       </View>
       <Text
         style={{
           fontFamily: 'Rajdhani_700Bold',
-          fontSize: 42,
+          fontSize: 34,
           color: colors.text,
           letterSpacing: 6,
         }}
@@ -157,7 +157,7 @@ function Logo() {
       <Text
         style={{
           fontFamily: 'Rajdhani_400Regular',
-          fontSize: 14,
+          fontSize: 12,
           color: colors.textMuted,
           letterSpacing: 8,
           marginTop: -4,
@@ -202,7 +202,7 @@ function DifficultyButton({
     <Animated.View entering={FadeInDown.delay(delay).springify()}>
       <AnimatedPressable style={animatedStyle} onPress={handlePress}>
         <View
-          className="px-6 py-4 rounded-2xl flex-row items-center justify-between"
+          className="px-5 py-2.5 rounded-xl flex-row items-center justify-between"
           style={{
             backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
@@ -212,13 +212,13 @@ function DifficultyButton({
         >
           <View className="flex-row items-center">
             <View
-              className="w-3 h-3 rounded-full mr-4"
+              className="w-2.5 h-2.5 rounded-full mr-3"
               style={{ backgroundColor: config.color }}
             />
             <Text
               style={{
                 fontFamily: 'Rajdhani_600SemiBold',
-                fontSize: 18,
+                fontSize: 16,
                 color: isSelected ? config.color : colors.textSecondary,
                 letterSpacing: 1,
               }}
@@ -268,9 +268,9 @@ function PlayButton({ onPress }: { onPress: () => void }) {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
-            paddingHorizontal: 64,
-            paddingVertical: 18,
-            borderRadius: 16,
+            paddingHorizontal: 56,
+            paddingVertical: 14,
+            borderRadius: 14,
             shadowColor: '#6366F1',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.4,
@@ -281,7 +281,7 @@ function PlayButton({ onPress }: { onPress: () => void }) {
           <Text
             style={{
               fontFamily: 'Rajdhani_700Bold',
-              fontSize: 20,
+              fontSize: 18,
               color: '#FFFFFF',
               letterSpacing: 4,
             }}
@@ -311,18 +311,18 @@ function StatCard({
   return (
     <Animated.View entering={FadeInUp.delay(delay).springify()} className="flex-1 mx-1.5">
       <View
-        className="rounded-2xl p-4 items-center"
+        className="rounded-xl p-3 items-center"
         style={{
           backgroundColor: colors.backgroundSecondary,
           borderWidth: 1,
           borderColor: colors.borderLight,
         }}
       >
-        <View className="mb-2">{icon}</View>
+        <View className="mb-1">{icon}</View>
         <Text
           style={{
             fontFamily: 'Rajdhani_700Bold',
-            fontSize: 22,
+            fontSize: 20,
             color: colors.text,
           }}
         >
@@ -382,9 +382,9 @@ function DailyChallengeCard({ onPress }: { onPress: () => void }) {
           end={{ x: 1, y: 1 }}
           style={{
             width: width - 64,
-            padding: 16,
-            borderRadius: 16,
-            marginBottom: 20,
+            padding: 12,
+            borderRadius: 14,
+            marginBottom: 14,
             borderWidth: 1,
             borderColor: dailyChallenge.completed
               ? (theme === 'dark' ? '#10B981' : '#34D399')
@@ -394,7 +394,7 @@ function DailyChallengeCard({ onPress }: { onPress: () => void }) {
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center flex-1">
               <View
-                className="w-12 h-12 rounded-xl items-center justify-center mr-3"
+                className="w-10 h-10 rounded-lg items-center justify-center mr-3"
                 style={{
                   backgroundColor: dailyChallenge.completed
                     ? (theme === 'dark' ? '#10B98130' : '#10B98120')
@@ -534,11 +534,11 @@ export default function HomeScreen() {
             <Logo />
 
             {/* Spacer */}
-            <View className="h-4" />
+            <View className="h-2" />
 
             {/* Continue Game button (shown when a game is in progress) */}
             {isPlaying && (
-              <Animated.View entering={FadeInDown.delay(120).springify()} className="mb-4">
+              <Animated.View entering={FadeInDown.delay(120).springify()} className="mb-3">
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -580,14 +580,14 @@ export default function HomeScreen() {
                   color: colors.textDim,
                   letterSpacing: 4,
                   textAlign: 'center',
-                  marginBottom: 12,
+                  marginBottom: 8,
                 }}
               >
                 SELECT DIFFICULTY
               </Text>
             </Animated.View>
 
-            <View className="space-y-3 mb-6">
+            <View className="space-y-2 mb-4">
               {difficulties.map((diff, index) => (
                 <DifficultyButton
                   key={diff}
@@ -600,12 +600,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View className="mb-8">
+            <View className="mb-4">
               <PlayButton onPress={handleStartGame} />
             </View>
 
             {/* Stats */}
-            <View className="w-full flex-row px-2 mb-4">
+            <View className="w-full flex-row px-2 mb-2">
               <StatCard
                 label="Games Won"
                 value={stats.gamesWon}
@@ -633,8 +633,8 @@ export default function HomeScreen() {
                 fontSize: 12,
                 color: colors.textDimmer,
                 textAlign: 'center',
-                marginTop: 8,
-                marginBottom: 16,
+                marginTop: 4,
+                marginBottom: 8,
               }}
             >
               Train your mind, one cell at a time
