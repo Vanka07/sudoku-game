@@ -131,23 +131,23 @@ function Logo() {
   const colors = themes[theme];
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center mb-1">
-      <View className="flex-row items-center justify-center mb-1">
+    <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center mb-2">
+      <View className="flex-row items-center justify-center mb-2">
         <View
-          className="w-12 h-12 rounded-xl items-center justify-center"
+          className="w-14 h-14 rounded-2xl items-center justify-center"
           style={{
             backgroundColor: colors.accentBg,
             borderWidth: 1,
             borderColor: colors.accentBorder,
           }}
         >
-          <Grid3x3 size={24} color={colors.accentLight} strokeWidth={1.5} />
+          <Grid3x3 size={28} color={colors.accentLight} strokeWidth={1.5} />
         </View>
       </View>
       <Text
         style={{
           fontFamily: 'Rajdhani_700Bold',
-          fontSize: 34,
+          fontSize: 38,
           color: colors.text,
           letterSpacing: 6,
         }}
@@ -202,7 +202,7 @@ function DifficultyButton({
     <Animated.View entering={FadeInDown.delay(delay).springify()}>
       <AnimatedPressable style={animatedStyle} onPress={handlePress}>
         <View
-          className="px-5 py-2.5 rounded-xl flex-row items-center justify-between"
+          className="px-5 py-3 rounded-xl flex-row items-center justify-between"
           style={{
             backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
@@ -534,7 +534,7 @@ export default function HomeScreen() {
             <Logo />
 
             {/* Spacer */}
-            <View className="h-2" />
+            <View className="h-3" />
 
             {/* Continue Game button (shown when a game is in progress) */}
             {isPlaying && (
@@ -587,7 +587,7 @@ export default function HomeScreen() {
               </Text>
             </Animated.View>
 
-            <View className="space-y-2 mb-4">
+            <View className="space-y-2.5 mb-5">
               {difficulties.map((diff, index) => (
                 <DifficultyButton
                   key={diff}
@@ -600,12 +600,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View className="mb-4">
+            <View className="mb-6">
               <PlayButton onPress={handleStartGame} />
             </View>
 
             {/* Stats */}
-            <View className="w-full flex-row px-2 mb-2">
+            <View className="w-full flex-row px-2 mb-3">
               <StatCard
                 label="Games Won"
                 value={stats.gamesWon}
