@@ -254,7 +254,7 @@ function DifficultyButton({
         accessibilityRole="button"
       >
         <View
-          className="px-5 py-3 rounded-xl flex-row items-center justify-between"
+          className="px-6 py-3.5 rounded-2xl flex-row items-center justify-between"
           style={{
             backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
@@ -264,13 +264,13 @@ function DifficultyButton({
         >
           <View className="flex-row items-center">
             <View
-              className="w-2.5 h-2.5 rounded-full mr-3"
+              className="w-3 h-3 rounded-full mr-4"
               style={{ backgroundColor: config.color }}
             />
             <Text
               style={{
                 fontFamily: 'Rajdhani_600SemiBold',
-                fontSize: 16,
+                fontSize: 18,
                 color: isSelected ? config.color : colors.textSecondary,
                 letterSpacing: 1,
               }}
@@ -662,7 +662,7 @@ export default function HomeScreen() {
               </Text>
             </Animated.View>
 
-            <View className="space-y-2.5 mb-5">
+            <View className="space-y-2.5 mb-8">
               {difficulties.map((diff, index) => (
                 <DifficultyButton
                   key={diff}
@@ -675,12 +675,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View className="mb-6">
+            <View className="mb-10">
               <PlayButton onPress={handleStartGame} />
             </View>
 
             {/* Stats */}
-            <View className="w-full flex-row px-2 mb-3">
+            <View className="w-full flex-row px-2 mb-4">
               <StatCard
                 label="Games Won"
                 value={stats.gamesWon}
