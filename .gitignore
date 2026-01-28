@@ -42,3 +42,11 @@ yarn-error.*
 
 # Expo log
 expo.log
+
+# env files
+.env
+
+# build artifacts
+dist/
+*.zip
+sudoku-web-deploy.zip

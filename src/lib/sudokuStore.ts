@@ -67,9 +67,14 @@ interface SudokuStore extends GameState {
   saveStats: () => Promise<void>;
   loadDailyChallenge: () => Promise<void>;
   saveDailyChallenge: () => Promise<void>;
+  saveGameState: () => Promise<void>;
+  loadGameState: () => Promise<boolean>;
 }
 
-// Seeded random number generator for consistent daily puzzles
+// ─── Game state persistence ───────────────────────────────────────────────────
+const GAME_STATE_STORAGE_KEY = 'sudoku_game_state';
+
+// ─── Seeded RNG for daily puzzles ─────────────────────────────────────────────
 function seededRandom(seed: number): () => number {
   return function() {
     seed = (seed * 9301 + 49297) % 233280;
@@ -88,7 +93,6 @@ function getDayNumber(): number {
   return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-// Seeded shuffle for deterministic puzzles
 function seededShuffle<T>(array: T[], random: () => number): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -98,49 +102,82 @@ function seededShuffle<T>(array: T[], random: () => number): T[] {
   return arr;
 }
 
-// Generate seeded sudoku for daily challenge
-function generateSeededSudoku(difficulty: Difficulty, random: () => number): { puzzle: number[][]; solution: number[][] } {
-  const board: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
+// ─── Sudoku solver / validator ────────────────────────────────────────────────
 
-  // Fill diagonal boxes with seeded random
-  for (let box = 0; box < 9; box += 3) {
-    const nums = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], random);
-    let idx = 0;
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        board[box + i][box + j] = nums[idx++];
+function isValid(board: number[][], row: number, col: number, num: number): boolean {
+  for (let x = 0; x < 9; x++) {
+    if (board[row][x] === num) return false;
+  }
+  for (let x = 0; x < 9; x++) {
+    if (board[x][col] === num) return false;
+  }
+  const boxRow = Math.floor(row / 3) * 3;
+  const boxCol = Math.floor(col / 3) * 3;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (board[boxRow + i][boxCol + j] === num) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Count solutions of a puzzle, stopping as soon as `limit` is reached.
+ * Returns the count (capped at `limit`).
+ */
+function countSolutions(board: number[][], limit: number): number {
+  let count = 0;
+
+  function solve(): boolean {
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (board[row][col] === 0) {
+          for (let num = 1; num <= 9; num++) {
+            if (isValid(board, row, col, num)) {
+              board[row][col] = num;
+              if (solve()) return true; // early exit when limit hit
+              board[row][col] = 0;
+            }
+          }
+          return false; // no valid number → backtrack
+        }
+      }
+    }
+    // Reached a complete solution
+    count++;
+    return count >= limit; // stop searching when we hit the limit
+  }
+
+  solve();
+  return count;
+}
+
+function shuffle<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function solveSudoku(board: number[][]): boolean {
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (board[row][col] === 0) {
+        const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        for (const num of nums) {
+          if (isValid(board, row, col, num)) {
+            board[row][col] = num;
+            if (solveSudoku(board)) return true;
+            board[row][col] = 0;
+          }
+        }
+        return false;
       }
     }
   }
-
-  // Solve with seeded random
-  solveSeededSudoku(board, random);
-  const solution = board.map(row => [...row]);
-
-  // Remove cells
-  const cellsToRemove: Record<Difficulty, number> = {
-    easy: 35,
-    medium: 45,
-    hard: 52,
-    expert: 58,
-  };
-
-  const puzzle = solution.map(row => [...row]);
-  const positions = seededShuffle(
-    Array.from({ length: 81 }, (_, i) => ({ row: Math.floor(i / 9), col: i % 9 })),
-    random
-  );
-
-  let removed = 0;
-  for (const pos of positions) {
-    if (removed >= cellsToRemove[difficulty]) break;
-    if (puzzle[pos.row][pos.col] !== 0) {
-      puzzle[pos.row][pos.col] = 0;
-      removed++;
-    }
-  }
-
-  return { puzzle, solution };
+  return true;
 }
 
 function solveSeededSudoku(board: number[][], random: () => number): boolean {
@@ -162,48 +199,7 @@ function solveSeededSudoku(board: number[][], random: () => number): boolean {
   return true;
 }
 
-// Sudoku puzzle generator
-function generateSudoku(difficulty: Difficulty): { puzzle: number[][]; solution: number[][] } {
-  // Generate a solved board
-  const solution = generateSolvedBoard();
-
-  // Remove numbers based on difficulty
-  const cellsToRemove: Record<Difficulty, number> = {
-    easy: 35,
-    medium: 45,
-    hard: 52,
-    expert: 58,
-  };
-
-  const puzzle = solution.map(row => [...row]);
-  const toRemove = cellsToRemove[difficulty];
-
-  let removed = 0;
-  while (removed < toRemove) {
-    const row = Math.floor(Math.random() * 9);
-    const col = Math.floor(Math.random() * 9);
-    if (puzzle[row][col] !== 0) {
-      puzzle[row][col] = 0;
-      removed++;
-    }
-  }
-
-  return { puzzle, solution };
-}
-
-function generateSolvedBoard(): number[][] {
-  const board: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
-
-  // Fill diagonal boxes first (they don't affect each other)
-  for (let i = 0; i < 9; i += 3) {
-    fillBox(board, i, i);
-  }
-
-  // Solve the rest
-  solveSudoku(board);
-
-  return board;
-}
+// ─── Board generation ─────────────────────────────────────────────────────────
 
 function fillBox(board: number[][], startRow: number, startCol: number): void {
   const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -215,56 +211,108 @@ function fillBox(board: number[][], startRow: number, startCol: number): void {
   }
 }
 
-function shuffle<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+function generateSolvedBoard(): number[][] {
+  const board: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
+  for (let i = 0; i < 9; i += 3) {
+    fillBox(board, i, i);
   }
-  return arr;
+  solveSudoku(board);
+  return board;
 }
 
-function isValid(board: number[][], row: number, col: number, num: number): boolean {
-  // Check row
-  for (let x = 0; x < 9; x++) {
-    if (board[row][x] === num) return false;
-  }
+/**
+ * Generate a puzzle with a guaranteed unique solution.
+ * After randomly removing cells, we verify uniqueness via countSolutions.
+ * If removing a cell creates multiple solutions, we restore it and try another.
+ */
+function generateSudoku(difficulty: Difficulty): { puzzle: number[][]; solution: number[][] } {
+  const solution = generateSolvedBoard();
+  const puzzle = solution.map(row => [...row]);
 
-  // Check column
-  for (let x = 0; x < 9; x++) {
-    if (board[x][col] === num) return false;
-  }
+  const cellsToRemove: Record<Difficulty, number> = {
+    easy: 35,
+    medium: 45,
+    hard: 52,
+    expert: 58,
+  };
 
-  // Check 3x3 box
-  const boxRow = Math.floor(row / 3) * 3;
-  const boxCol = Math.floor(col / 3) * 3;
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      if (board[boxRow + i][boxCol + j] === num) return false;
+  const toRemove = cellsToRemove[difficulty];
+  const positions = shuffle(
+    Array.from({ length: 81 }, (_, i) => ({ row: Math.floor(i / 9), col: i % 9 }))
+  );
+
+  let removed = 0;
+  for (const pos of positions) {
+    if (removed >= toRemove) break;
+    if (puzzle[pos.row][pos.col] === 0) continue;
+
+    const backup = puzzle[pos.row][pos.col];
+    puzzle[pos.row][pos.col] = 0;
+
+    // Verify the puzzle still has a unique solution
+    const check = puzzle.map(r => [...r]);
+    const solutions = countSolutions(check, 2);
+    if (solutions !== 1) {
+      // Not unique — restore and skip this cell
+      puzzle[pos.row][pos.col] = backup;
+    } else {
+      removed++;
     }
   }
 
-  return true;
+  return { puzzle, solution };
 }
 
-function solveSudoku(board: number[][]): boolean {
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
-      if (board[row][col] === 0) {
-        const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        for (const num of nums) {
-          if (isValid(board, row, col, num)) {
-            board[row][col] = num;
-            if (solveSudoku(board)) return true;
-            board[row][col] = 0;
-          }
-        }
-        return false;
+function generateSeededSudoku(difficulty: Difficulty, random: () => number): { puzzle: number[][]; solution: number[][] } {
+  const board: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
+
+  for (let box = 0; box < 9; box += 3) {
+    const nums = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], random);
+    let idx = 0;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        board[box + i][box + j] = nums[idx++];
       }
     }
   }
-  return true;
+
+  solveSeededSudoku(board, random);
+  const solution = board.map(row => [...row]);
+
+  const cellsToRemove: Record<Difficulty, number> = {
+    easy: 35,
+    medium: 45,
+    hard: 52,
+    expert: 58,
+  };
+
+  const puzzle = solution.map(row => [...row]);
+  const positions = seededShuffle(
+    Array.from({ length: 81 }, (_, i) => ({ row: Math.floor(i / 9), col: i % 9 })),
+    random
+  );
+
+  let removed = 0;
+  for (const pos of positions) {
+    if (removed >= cellsToRemove[difficulty]) break;
+    if (puzzle[pos.row][pos.col] === 0) continue;
+
+    const backup = puzzle[pos.row][pos.col];
+    puzzle[pos.row][pos.col] = 0;
+
+    const check = puzzle.map(r => [...r]);
+    const solutions = countSolutions(check, 2);
+    if (solutions !== 1) {
+      puzzle[pos.row][pos.col] = backup;
+    } else {
+      removed++;
+    }
+  }
+
+  return { puzzle, solution };
 }
+
+// ─── Board helpers ────────────────────────────────────────────────────────────
 
 function createEmptyBoard(): Cell[][] {
   return Array(9).fill(null).map(() =>
@@ -292,6 +340,7 @@ function initializeBoardFromPuzzle(puzzle: number[][]): Cell[][] {
   );
 }
 
+// ─── Storage keys ─────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'sudoku_stats';
 const DAILY_STORAGE_KEY = 'sudoku_daily';
 
@@ -311,6 +360,8 @@ const initialDailyChallenge: DailyChallenge = {
   lastCompletedDate: null,
 };
 
+// ─── Store ────────────────────────────────────────────────────────────────────
+
 export const useSudokuStore = create<SudokuStore>((set, get) => ({
   board: createEmptyBoard(),
   solution: [],
@@ -329,11 +380,66 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
   isDailyChallenge: false,
   dailyChallenge: initialDailyChallenge,
 
+  // ── Game state persistence ──────────────────────────────────────────────
+
+  saveGameState: async () => {
+    try {
+      const state = get();
+      const persistable = {
+        board: state.board,
+        solution: state.solution,
+        selectedCell: state.selectedCell,
+        difficulty: state.difficulty,
+        mistakes: state.mistakes,
+        hintsRemaining: state.hintsRemaining,
+        elapsedTime: state.elapsedTime,
+        noteMode: state.noteMode,
+        isDailyChallenge: state.isDailyChallenge,
+        isPlaying: state.isPlaying,
+        isComplete: state.isComplete,
+      };
+      await AsyncStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(persistable));
+    } catch (e) {
+      console.log('Failed to save game state:', e);
+    }
+  },
+
+  loadGameState: async () => {
+    try {
+      const data = await AsyncStorage.getItem(GAME_STATE_STORAGE_KEY);
+      if (data) {
+        const saved = JSON.parse(data);
+        if (saved.board && saved.solution && saved.isPlaying && !saved.isComplete) {
+          set({
+            board: saved.board,
+            solution: saved.solution,
+            selectedCell: saved.selectedCell ?? null,
+            difficulty: saved.difficulty ?? 'medium',
+            mistakes: saved.mistakes ?? 0,
+            hintsRemaining: saved.hintsRemaining ?? 3,
+            elapsedTime: saved.elapsedTime ?? 0,
+            noteMode: saved.noteMode ?? false,
+            isDailyChallenge: saved.isDailyChallenge ?? false,
+            isPlaying: true,
+            isPaused: true, // Resume paused so the player sees the board first
+            isComplete: false,
+            history: [],
+          });
+          return true;
+        }
+      }
+    } catch (e) {
+      console.log('Failed to load game state:', e);
+    }
+    return false;
+  },
+
+  // ── Cell selection ──────────────────────────────────────────────────────
+
   selectCell: (row, col) => {
     const { board, isPlaying, isPaused } = get();
     if (!isPlaying || isPaused) return;
 
-    // Update highlighting
     const newBoard = board.map((r, ri) =>
       r.map((cell, ci) => ({
         ...cell,
@@ -348,6 +454,8 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     set({ selectedCell: { row, col }, board: newBoard });
   },
 
+  // ── Number entry ────────────────────────────────────────────────────────
+
   enterNumber: (num) => {
     const { selectedCell, board, solution, noteMode, mistakes, maxMistakes, isPlaying, isPaused, history } = get();
     if (!selectedCell || !isPlaying || isPaused) return;
@@ -359,12 +467,11 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
 
     // Save current state to history before making changes
     const boardCopy = board.map(r => r.map(c => ({ ...c, notes: [...c.notes] })));
-    const newHistory = [...history, { board: boardCopy, mistakes }].slice(-20); // Keep last 20 moves
+    const newHistory = [...history, { board: boardCopy, mistakes }].slice(-20);
 
     const newBoard = board.map(r => r.map(c => ({ ...c })));
 
     if (noteMode) {
-      // Toggle note
       const notes = [...cell.notes];
       const idx = notes.indexOf(num);
       if (idx >= 0) {
@@ -376,23 +483,22 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       newBoard[row][col].notes = notes;
       newBoard[row][col].value = 0;
     } else {
-      // Enter number
       newBoard[row][col].value = num;
       newBoard[row][col].notes = [];
 
-      // Check if correct
       if (num !== solution[row][col]) {
         newBoard[row][col].isError = true;
         newBoard[row][col].isCorrect = false;
         const newMistakes = mistakes + 1;
 
         if (newMistakes >= maxMistakes) {
-          // Game over
           set({ board: newBoard, mistakes: newMistakes, isPlaying: false, isComplete: true, history: newHistory });
+          get().saveGameState();
           return;
         }
 
         set({ board: newBoard, mistakes: newMistakes, history: newHistory });
+        get().saveGameState();
         return;
       } else {
         newBoard[row][col].isError = false;
@@ -424,7 +530,6 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
         if (!complete) break;
       }
 
-
       if (complete) {
         const { stats, difficulty, elapsedTime, isDailyChallenge, dailyChallenge } = get();
         const newStats = { ...stats };
@@ -438,7 +543,6 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
           newStats.bestTime[difficulty] = elapsedTime;
         }
 
-        // Handle daily challenge completion
         if (isDailyChallenge && !dailyChallenge.completed) {
           const today = getTodayString();
           const yesterday = new Date();
@@ -467,17 +571,22 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
           });
           get().saveStats();
           get().saveDailyChallenge();
+          get().saveGameState();
           return;
         }
 
         set({ board: newBoard, isComplete: true, isPlaying: false, stats: newStats, history: newHistory });
         get().saveStats();
+        get().saveGameState();
         return;
       }
     }
 
     set({ board: newBoard, history: newHistory });
+    get().saveGameState();
   },
+
+  // ── Clear / erase ──────────────────────────────────────────────────────
 
   clearCell: () => {
     const { selectedCell, board, isPlaying, isPaused } = get();
@@ -494,11 +603,14 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     newBoard[row][col].isError = false;
 
     set({ board: newBoard });
+    get().saveGameState();
   },
 
   toggleNoteMode: () => {
     set(state => ({ noteMode: !state.noteMode }));
   },
+
+  // ── Hint ────────────────────────────────────────────────────────────────
 
   useHint: () => {
     const { selectedCell, board, solution, hintsRemaining, isPlaying, isPaused } = get();
@@ -514,7 +626,6 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     newBoard[row][col].notes = [];
     newBoard[row][col].isError = false;
 
-    // Check completion
     let complete = true;
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
@@ -532,7 +643,25 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       isComplete: complete,
       isPlaying: !complete,
     });
+    get().saveGameState();
   },
+
+  // ── Undo ────────────────────────────────────────────────────────────────
+
+  undo: () => {
+    const { history, isPlaying, isPaused } = get();
+    if (!isPlaying || isPaused || history.length === 0) return;
+
+    const lastState = history[history.length - 1];
+    set({
+      board: lastState.board,
+      mistakes: lastState.mistakes,
+      history: history.slice(0, -1),
+    });
+    get().saveGameState();
+  },
+
+  // ── New game ────────────────────────────────────────────────────────────
 
   startNewGame: (difficulty) => {
     const { puzzle, solution } = generateSudoku(difficulty);
@@ -551,8 +680,37 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       elapsedTime: 0,
       noteMode: false,
       history: [],
+      isDailyChallenge: false,
     });
+    get().saveGameState();
   },
+
+  startDailyChallenge: () => {
+    const dayNum = getDayNumber();
+    const random = seededRandom(dayNum * 12345);
+
+    const { puzzle, solution } = generateSeededSudoku('medium', random);
+    const board = initializeBoardFromPuzzle(puzzle);
+
+    set({
+      board,
+      solution,
+      selectedCell: null,
+      difficulty: 'medium',
+      isPlaying: true,
+      isPaused: false,
+      isComplete: false,
+      mistakes: 0,
+      hintsRemaining: 3,
+      elapsedTime: 0,
+      noteMode: false,
+      history: [],
+      isDailyChallenge: true,
+    });
+    get().saveGameState();
+  },
+
+  // ── Pause / resume / timer ──────────────────────────────────────────────
 
   pauseGame: () => {
     set({ isPaused: true });
@@ -570,17 +728,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     set({ difficulty });
   },
 
-  undo: () => {
-    const { history, isPlaying, isPaused } = get();
-    if (!isPlaying || isPaused || history.length === 0) return;
-
-    const lastState = history[history.length - 1];
-    set({
-      board: lastState.board,
-      mistakes: lastState.mistakes,
-      history: history.slice(0, -1),
-    });
-  },
+  // ── Stats persistence ───────────────────────────────────────────────────
 
   loadStats: async () => {
     try {
@@ -602,30 +750,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     }
   },
 
-  startDailyChallenge: () => {
-    const dayNum = getDayNumber();
-    const random = seededRandom(dayNum * 12345);
-
-    // Generate puzzle with seeded random
-    const { puzzle, solution } = generateSeededSudoku('medium', random);
-    const board = initializeBoardFromPuzzle(puzzle);
-
-    set({
-      board,
-      solution,
-      selectedCell: null,
-      difficulty: 'medium',
-      isPlaying: true,
-      isPaused: false,
-      isComplete: false,
-      mistakes: 0,
-      hintsRemaining: 3,
-      elapsedTime: 0,
-      noteMode: false,
-      history: [],
-      isDailyChallenge: true,
-    });
-  },
+  // ── Daily challenge persistence ─────────────────────────────────────────
 
   loadDailyChallenge: async () => {
     try {
@@ -634,14 +759,12 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
         const saved = JSON.parse(data) as DailyChallenge;
         const today = getTodayString();
 
-        // Check if streak should continue or reset
         if (saved.lastCompletedDate) {
           const lastDate = new Date(saved.lastCompletedDate);
           const todayDate = new Date(today);
           const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
 
           if (diffDays > 1) {
-            // Streak broken
             set({
               dailyChallenge: {
                 ...initialDailyChallenge,
@@ -650,10 +773,8 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
               }
             });
           } else if (saved.date === today) {
-            // Same day, keep state
             set({ dailyChallenge: saved });
           } else {
-            // New day, reset completed but keep streak
             set({
               dailyChallenge: {
                 ...saved,

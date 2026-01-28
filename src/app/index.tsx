@@ -479,6 +479,8 @@ export default function HomeScreen() {
   const setDifficulty = useSudokuStore((s) => s.setDifficulty);
   const startNewGame = useSudokuStore((s) => s.startNewGame);
   const startDailyChallenge = useSudokuStore((s) => s.startDailyChallenge);
+  const loadGameState = useSudokuStore((s) => s.loadGameState);
+  const isPlaying = useSudokuStore((s) => s.isPlaying);
   const stats = useSudokuStore((s) => s.stats);
   const loadStats = useSudokuStore((s) => s.loadStats);
   const loadDailyChallenge = useSudokuStore((s) => s.loadDailyChallenge);
@@ -490,10 +492,15 @@ export default function HomeScreen() {
     loadStats();
     loadTheme();
     loadDailyChallenge();
+    loadGameState();
   }, []);
 
   const handleStartGame = () => {
     startNewGame(difficulty);
+    router.push('/game');
+  };
+
+  const handleResumeGame = () => {
     router.push('/game');
   };
 
@@ -528,6 +535,38 @@ export default function HomeScreen() {
 
             {/* Spacer */}
             <View className="h-4" />
+
+            {/* Continue Game button (shown when a game is in progress) */}
+            {isPlaying && (
+              <Animated.View entering={FadeInDown.delay(120).springify()} className="mb-4">
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    handleResumeGame();
+                  }}
+                  style={{
+                    width: width - 64,
+                    paddingVertical: 14,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    backgroundColor: colors.accentBg,
+                    borderWidth: 1,
+                    borderColor: colors.accentBorder,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: 'Rajdhani_700Bold',
+                      fontSize: 17,
+                      color: colors.accentLight,
+                      letterSpacing: 3,
+                    }}
+                  >
+                    CONTINUE GAME
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            )}
 
             {/* Daily Challenge Card */}
             <DailyChallengeCard onPress={handleStartDailyChallenge} />

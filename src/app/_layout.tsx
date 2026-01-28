@@ -1,13 +1,13 @@
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Rajdhani_400Regular, Rajdhani_500Medium, Rajdhani_600SemiBold, Rajdhani_700Bold } from '@expo-google-fonts/rajdhani';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { useThemeStore, themes } from '@/lib/themeStore';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -15,9 +15,7 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
-
-const SudokuTheme = {
+const SudokuDarkTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
@@ -30,9 +28,25 @@ const SudokuTheme = {
   },
 };
 
+const SudokuLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#6366F1',
+    background: '#F8FAFC',
+    card: '#FFFFFF',
+    text: '#1E293B',
+    border: '#E2E8F0',
+    notification: '#EF4444',
+  },
+};
+
 function RootLayoutNav() {
+  const theme = useThemeStore((s) => s.theme);
+  const navTheme = theme === 'dark' ? SudokuDarkTheme : SudokuLightTheme;
+
   return (
-    <ThemeProvider value={SudokuTheme}>
+    <ThemeProvider value={navTheme}>
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="game" options={{ gestureEnabled: false }} />
@@ -42,12 +56,19 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const theme = useThemeStore((s) => s.theme);
+  const loadTheme = useThemeStore((s) => s.loadTheme);
+
   const [fontsLoaded] = useFonts({
     Rajdhani_400Regular,
     Rajdhani_500Medium,
     Rajdhani_600SemiBold,
     Rajdhani_700Bold,
   });
+
+  useEffect(() => {
+    loadTheme();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -60,11 +81,9 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style="light" />
-        <RootLayoutNav />
-      </GestureHandlerRootView>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <RootLayoutNav />
+    </GestureHandlerRootView>
   );
 }
