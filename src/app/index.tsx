@@ -259,7 +259,7 @@ function DifficultyButton({
             backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
             borderColor: isSelected ? `${config.color}50` : colors.border,
-            width: screenWidth - 64,
+            width: Math.min(screenWidth - 64, 500),
           }}
         >
           <View className="flex-row items-center">
@@ -448,7 +448,7 @@ function DailyChallengeCard({ onPress, screenWidth }: { onPress: () => void; scr
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
-            width: screenWidth - 64,
+            width: Math.min(screenWidth - 64, 500),
             padding: 12,
             borderRadius: 14,
             marginBottom: 14,

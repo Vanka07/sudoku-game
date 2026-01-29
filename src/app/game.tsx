@@ -207,7 +207,7 @@ function SudokuBoard() {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
   const { width } = useWindowDimensions();
-  const boardSize = width - BOARD_PADDING * 2;
+  const boardSize = Math.min(width - BOARD_PADDING * 2, 500);
   const cellSize = boardSize / 9;
 
   const selectedValue = selectedCell
@@ -290,7 +290,7 @@ function NumberButton({
       <View
         className="items-center justify-center mx-1"
         style={{
-          width: (screenWidth - 64) / 9 - 2,
+          width: (Math.min(screenWidth, 532) - 64) / 9 - 2,
           height: 56,
           backgroundColor: isDisabled
             ? colors.backgroundSecondary
