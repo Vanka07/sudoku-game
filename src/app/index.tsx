@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, useWindowDimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -596,8 +596,26 @@ export default function HomeScreen() {
   }, []);
 
   const handleStartGame = () => {
-    startNewGame(difficulty);
-    router.push('/game');
+    if (isPlaying) {
+      Alert.alert(
+        'Game in Progress',
+        'Starting a new game will lose your current progress. Continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'New Game',
+            style: 'destructive',
+            onPress: () => {
+              startNewGame(difficulty);
+              router.push('/game');
+            },
+          },
+        ]
+      );
+    } else {
+      startNewGame(difficulty);
+      router.push('/game');
+    }
   };
 
   const handleResumeGame = () => {

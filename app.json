@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sudoku Minimalist",
     "slug": "sudoku-minimalist",
-    "scheme": "vibecode",
+    "scheme": "sudoku-minimalist",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",

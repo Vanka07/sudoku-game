@@ -609,7 +609,7 @@ function Header() {
           accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
           accessibilityRole="button"
         >
-          <Pause size={20} color={colors.textMuted} />
+          {isPaused ? <Play size={20} color={colors.textMuted} /> : <Pause size={20} color={colors.textMuted} />}
         </Pressable>
       </View>
 

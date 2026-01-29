@@ -606,6 +606,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     newBoard[row][col].value = 0;
     newBoard[row][col].notes = [];
     newBoard[row][col].isError = false;
+    newBoard[row][col].isCorrect = false;
 
     set({ board: newBoard });
     get().saveGameState();
