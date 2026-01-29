@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Dimensions, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -22,8 +22,6 @@ import { useThemeStore, themes } from '@/lib/themeStore';
 import { useSettingsStore } from '@/lib/settingsStore';
 import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal';
 import { SettingsModal } from '@/components/SettingsModal';
-
-const { width } = Dimensions.get('window');
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -110,7 +108,7 @@ function SettingsButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-function FloatingGrid({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) {
+function FloatingGrid({ delay, x, y, size, screenWidth }: { delay: number; x: number; y: number; size: number; screenWidth: number }) {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
   const opacity = useSharedValue(0.03);
@@ -221,11 +219,13 @@ function DifficultyButton({
   isSelected,
   onSelect,
   delay,
+  screenWidth,
 }: {
   difficulty: Difficulty;
   isSelected: boolean;
   onSelect: () => void;
   delay: number;
+  screenWidth: number;
 }) {
   const config = DIFFICULTY_CONFIG[difficulty];
   const theme = useThemeStore((s) => s.theme);
@@ -259,7 +259,7 @@ function DifficultyButton({
             backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
             borderColor: isSelected ? `${config.color}50` : colors.border,
-            width: width - 64,
+            width: screenWidth - 64,
           }}
         >
           <View className="flex-row items-center">
@@ -408,7 +408,7 @@ function formatTime(seconds: number | null): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function DailyChallengeCard({ onPress }: { onPress: () => void }) {
+function DailyChallengeCard({ onPress, screenWidth }: { onPress: () => void; screenWidth: number }) {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
   const dailyChallenge = useSudokuStore((s) => s.dailyChallenge);
@@ -448,7 +448,7 @@ function DailyChallengeCard({ onPress }: { onPress: () => void }) {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
-            width: width - 64,
+            width: screenWidth - 64,
             padding: 12,
             borderRadius: 14,
             marginBottom: 14,
@@ -556,6 +556,7 @@ export default function HomeScreen() {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const colors = themes[theme];
 
+  const { width } = useWindowDimensions();
   const { showOnboarding, dismissOnboarding } = useOnboarding();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -586,10 +587,10 @@ export default function HomeScreen() {
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Floating decorative grids */}
-      <FloatingGrid delay={0} x={-40} y={80} size={120} />
-      <FloatingGrid delay={500} x={width - 80} y={200} size={100} />
-      <FloatingGrid delay={1000} x={30} y={500} size={80} />
-      <FloatingGrid delay={1500} x={width - 120} y={600} size={140} />
+      <FloatingGrid delay={0} x={-40} y={80} size={120} screenWidth={width} />
+      <FloatingGrid delay={500} x={width - 80} y={200} size={100} screenWidth={width} />
+      <FloatingGrid delay={1000} x={30} y={500} size={80} screenWidth={width} />
+      <FloatingGrid delay={1500} x={width - 120} y={600} size={140} screenWidth={width} />
 
       <SafeAreaView className="flex-1">
         <ScrollView
@@ -618,7 +619,8 @@ export default function HomeScreen() {
                     handleResumeGame();
                   }}
                   style={{
-                    width: width - 64,
+                    maxWidth: width - 64,
+                    width: '100%',
                     paddingVertical: 14,
                     borderRadius: 14,
                     alignItems: 'center',
@@ -644,7 +646,7 @@ export default function HomeScreen() {
             )}
 
             {/* Daily Challenge Card */}
-            <DailyChallengeCard onPress={handleStartDailyChallenge} />
+            <DailyChallengeCard onPress={handleStartDailyChallenge} screenWidth={width} />
 
             {/* Difficulty Selection */}
             <Animated.View entering={FadeInDown.delay(200).springify()} className="mb-2">
@@ -670,6 +672,7 @@ export default function HomeScreen() {
                   isSelected={difficulty === diff}
                   onSelect={() => setDifficulty(diff)}
                   delay={250 + index * 50}
+                  screenWidth={width}
                 />
               ))}
             </View>
