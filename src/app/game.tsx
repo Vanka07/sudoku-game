@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, Pressable, Dimensions, Share } from 'react-native';
+import { View, Text, Pressable, Share, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -32,10 +32,7 @@ import * as Haptics from 'expo-haptics';
 import { useSudokuStore, DIFFICULTY_CONFIG, Cell } from '@/lib/sudokuStore';
 import { useThemeStore, themes } from '@/lib/themeStore';
 
-const { width } = Dimensions.get('window');
 const BOARD_PADDING = 16;
-const BOARD_SIZE = width - BOARD_PADDING * 2;
-const CELL_SIZE = BOARD_SIZE / 9;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -52,6 +49,7 @@ function SudokuCell({
   isSelected,
   sameValue,
   onPress,
+  cellSize,
 }: {
   cell: Cell;
   row: number;
@@ -59,6 +57,7 @@ function SudokuCell({
   isSelected: boolean;
   sameValue: boolean;
   onPress: () => void;
+  cellSize: number;
 }) {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
@@ -129,8 +128,8 @@ function SudokuCell({
       style={[
         animatedStyle,
         {
-          width: CELL_SIZE,
-          height: CELL_SIZE,
+          width: cellSize,
+          height: cellSize,
           backgroundColor: bgColor,
           borderRightWidth: isBoxBorderRight ? 2 : 0.5,
           borderBottomWidth: isBoxBorderBottom ? 2 : 0.5,
@@ -152,8 +151,8 @@ function SudokuCell({
             glowStyle,
             {
               position: 'absolute',
-              width: CELL_SIZE - 4,
-              height: CELL_SIZE - 4,
+              width: cellSize - 4,
+              height: cellSize - 4,
               borderRadius: 8,
               backgroundColor: colors.cellCorrectText,
             },
@@ -176,8 +175,8 @@ function SudokuCell({
             <View
               key={n}
               style={{
-                width: CELL_SIZE / 3 - 1,
-                height: CELL_SIZE / 3 - 1,
+                width: cellSize / 3 - 1,
+                height: cellSize / 3 - 1,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -207,6 +206,9 @@ function SudokuBoard() {
   const selectCell = useSudokuStore((s) => s.selectCell);
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
+  const { width } = useWindowDimensions();
+  const boardSize = width - BOARD_PADDING * 2;
+  const cellSize = boardSize / 9;
 
   const selectedValue = selectedCell
     ? board[selectedCell.row][selectedCell.col].value
@@ -216,8 +218,8 @@ function SudokuBoard() {
     <Animated.View
       entering={FadeInDown.delay(100).springify()}
       style={{
-        width: BOARD_SIZE,
-        height: BOARD_SIZE,
+        width: boardSize,
+        height: boardSize,
         backgroundColor: theme === 'dark' ? '#111318' : '#FFFFFF',
         borderRadius: 12,
         borderWidth: 2,
@@ -239,6 +241,7 @@ function SudokuBoard() {
               }
               sameValue={selectedValue !== 0 && cell.value === selectedValue}
               onPress={() => selectCell(rowIndex, colIndex)}
+              cellSize={cellSize}
             />
           ))}
         </View>
@@ -251,10 +254,12 @@ function NumberButton({
   num,
   onPress,
   count,
+  screenWidth,
 }: {
   num: number;
   onPress: () => void;
   count: number;
+  screenWidth: number;
 }) {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
@@ -285,7 +290,7 @@ function NumberButton({
       <View
         className="items-center justify-center mx-1"
         style={{
-          width: (width - 64) / 9 - 2,
+          width: (screenWidth - 64) / 9 - 2,
           height: 56,
           backgroundColor: isDisabled
             ? colors.backgroundSecondary
@@ -315,6 +320,7 @@ function NumberButton({
 function NumberPad() {
   const enterNumber = useSudokuStore((s) => s.enterNumber);
   const board = useSudokuStore((s) => s.board);
+  const { width } = useWindowDimensions();
 
   // Count how many of each number are placed
   const counts = useMemo(() => {
@@ -339,6 +345,7 @@ function NumberPad() {
           num={num}
           onPress={() => enterNumber(num)}
           count={counts[num]}
+          screenWidth={width}
         />
       ))}
     </Animated.View>
@@ -622,6 +629,7 @@ function ConfettiPiece({ delay, x }: { delay: number; x: number }) {
 }
 
 function Confetti() {
+  const { width } = useWindowDimensions();
   const pieces = useMemo(() => {
     return Array(40)
       .fill(0)
@@ -630,7 +638,7 @@ function Confetti() {
         x: Math.random() * width,
         delay: Math.random() * 500,
       }));
-  }, []);
+  }, [width]);
 
   return (
     <View className="absolute inset-0 overflow-hidden pointer-events-none">
