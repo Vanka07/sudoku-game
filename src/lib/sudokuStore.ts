@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSettingsStore } from '@/lib/settingsStore';
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
@@ -509,16 +510,19 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
         // Trigger matching-number highlight pulse
         set({ lastCorrectValue: num });
 
-        // Remove this number from notes in same row/col/box
-        for (let i = 0; i < 9; i++) {
-          newBoard[row][i].notes = newBoard[row][i].notes.filter(n => n !== num);
-          newBoard[i][col].notes = newBoard[i][col].notes.filter(n => n !== num);
-        }
-        const boxRow = Math.floor(row / 3) * 3;
-        const boxCol = Math.floor(col / 3) * 3;
-        for (let i = 0; i < 3; i++) {
-          for (let j = 0; j < 3; j++) {
-            newBoard[boxRow + i][boxCol + j].notes = newBoard[boxRow + i][boxCol + j].notes.filter(n => n !== num);
+        // Remove this number from notes in same row/col/box (if setting enabled)
+        const { autoRemoveNotes } = useSettingsStore.getState();
+        if (autoRemoveNotes) {
+          for (let i = 0; i < 9; i++) {
+            newBoard[row][i].notes = newBoard[row][i].notes.filter(n => n !== num);
+            newBoard[i][col].notes = newBoard[i][col].notes.filter(n => n !== num);
+          }
+          const boxRow = Math.floor(row / 3) * 3;
+          const boxCol = Math.floor(col / 3) * 3;
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              newBoard[boxRow + i][boxCol + j].notes = newBoard[boxRow + i][boxCol + j].notes.filter(n => n !== num);
+            }
           }
         }
       }

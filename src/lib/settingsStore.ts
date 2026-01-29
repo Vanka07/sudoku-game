@@ -9,12 +9,14 @@ export type SoundType = 'tap' | 'place' | 'error' | 'correct' | 'win' | 'hint';
 interface Settings {
   soundEnabled: boolean;
   hapticEnabled: boolean;
+  autoRemoveNotes: boolean;
 }
 
 interface SettingsStore extends Settings {
   loadSettings: () => Promise<void>;
   setSoundEnabled: (enabled: boolean) => void;
   setHapticEnabled: (enabled: boolean) => void;
+  setAutoRemoveNotes: (enabled: boolean) => void;
   playSound: (type: SoundType) => void;
   triggerHaptic: (style?: Haptics.ImpactFeedbackStyle) => void;
 }
@@ -22,6 +24,7 @@ interface SettingsStore extends Settings {
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
   soundEnabled: true,
   hapticEnabled: true,
+  autoRemoveNotes: true,
 
   loadSettings: async () => {
     try {
@@ -31,6 +34,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         set({
           soundEnabled: saved.soundEnabled ?? true,
           hapticEnabled: saved.hapticEnabled ?? true,
+          autoRemoveNotes: saved.autoRemoveNotes ?? true,
         });
       }
     } catch (e) {
@@ -40,17 +44,28 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   setSoundEnabled: (enabled: boolean) => {
     set({ soundEnabled: enabled });
+    const { hapticEnabled, autoRemoveNotes } = get();
     AsyncStorage.setItem(
       SETTINGS_STORAGE_KEY,
-      JSON.stringify({ soundEnabled: enabled, hapticEnabled: get().hapticEnabled })
+      JSON.stringify({ soundEnabled: enabled, hapticEnabled, autoRemoveNotes })
     ).catch(() => {});
   },
 
   setHapticEnabled: (enabled: boolean) => {
     set({ hapticEnabled: enabled });
+    const { soundEnabled, autoRemoveNotes } = get();
     AsyncStorage.setItem(
       SETTINGS_STORAGE_KEY,
-      JSON.stringify({ soundEnabled: get().soundEnabled, hapticEnabled: enabled })
+      JSON.stringify({ soundEnabled, hapticEnabled: enabled, autoRemoveNotes })
+    ).catch(() => {});
+  },
+
+  setAutoRemoveNotes: (enabled: boolean) => {
+    set({ autoRemoveNotes: enabled });
+    const { soundEnabled, hapticEnabled } = get();
+    AsyncStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ soundEnabled, hapticEnabled, autoRemoveNotes: enabled })
     ).catch(() => {});
   },
 

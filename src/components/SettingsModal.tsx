@@ -17,8 +17,10 @@ export function SettingsModal({
   const colors = themes[theme];
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const hapticEnabled = useSettingsStore((s) => s.hapticEnabled);
+  const autoRemoveNotes = useSettingsStore((s) => s.autoRemoveNotes);
   const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled);
   const setHapticEnabled = useSettingsStore((s) => s.setHapticEnabled);
+  const setAutoRemoveNotes = useSettingsStore((s) => s.setAutoRemoveNotes);
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
@@ -125,6 +127,8 @@ export function SettingsModal({
               justifyContent: 'space-between',
               alignItems: 'center',
               paddingVertical: 14,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.borderLight,
             }}
           >
             <View>
@@ -156,6 +160,47 @@ export function SettingsModal({
               trackColor={{ false: colors.border, true: `${colors.accent}80` }}
               thumbColor={hapticEnabled ? colors.accent : colors.textDim}
               accessibilityLabel="Toggle haptic feedback"
+            />
+          </View>
+
+          {/* Auto-remove Notes Toggle */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingVertical: 14,
+            }}
+          >
+            <View>
+              <Text
+                style={{
+                  fontFamily: 'Rajdhani_600SemiBold',
+                  fontSize: 16,
+                  color: colors.text,
+                }}
+              >
+                Auto-remove Notes
+              </Text>
+              <Text
+                style={{
+                  fontFamily: 'Rajdhani_400Regular',
+                  fontSize: 13,
+                  color: colors.textMuted,
+                }}
+              >
+                Clear notes when number is placed
+              </Text>
+            </View>
+            <Switch
+              value={autoRemoveNotes}
+              onValueChange={(val) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAutoRemoveNotes(val);
+              }}
+              trackColor={{ false: colors.border, true: `${colors.accent}80` }}
+              thumbColor={autoRemoveNotes ? colors.accent : colors.textDim}
+              accessibilityLabel="Toggle auto-remove notes"
             />
           </View>
 

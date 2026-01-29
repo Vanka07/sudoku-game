@@ -13,6 +13,7 @@ import {
   Trophy,
   RotateCcw,
   Share2,
+  Check,
 } from 'lucide-react-native';
 import Animated, {
   FadeIn,
@@ -31,6 +32,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { useSudokuStore, DIFFICULTY_CONFIG, Cell } from '@/lib/sudokuStore';
 import { useThemeStore, themes } from '@/lib/themeStore';
+import * as StoreReview from 'expo-store-review';
 
 const BOARD_PADDING = 16;
 
@@ -355,15 +357,19 @@ function NumberButton({
           opacity: isDisabled ? 0.3 : 1,
         }}
       >
-        <Text
-          style={{
-            fontFamily: 'Rajdhani_700Bold',
-            fontSize: 26,
-            color: isDisabled ? colors.textDimmer : colors.accentLight,
-          }}
-        >
-          {num}
-        </Text>
+        {isDisabled ? (
+          <Check size={20} color={colors.textDimmer} strokeWidth={3} />
+        ) : (
+          <Text
+            style={{
+              fontFamily: 'Rajdhani_700Bold',
+              fontSize: 26,
+              color: colors.accentLight,
+            }}
+          >
+            {num}
+          </Text>
+        )}
       </View>
     </AnimatedPressable>
   );
@@ -817,6 +823,7 @@ function VictoryModal() {
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
 
+  const stats = useSudokuStore((s) => s.stats);
   const isGameOver = mistakes >= maxMistakes;
 
   const trophyScale = useSharedValue(0);
@@ -825,6 +832,16 @@ function VictoryModal() {
 
   useEffect(() => {
     if (isComplete && !isGameOver) {
+      // Prompt for review after 3rd win
+      if (stats.gamesWon > 0 && stats.gamesWon % 3 === 0) {
+        setTimeout(async () => {
+          try {
+            if (await StoreReview.hasAction()) {
+              await StoreReview.requestReview();
+            }
+          } catch (_) {}
+        }, 2000);
+      }
       // Trophy bounce animation
       trophyScale.value = withSequence(
         withTiming(1.2, { duration: 300, easing: Easing.out(Easing.back(2)) }),
