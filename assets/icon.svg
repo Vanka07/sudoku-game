@@ -24,11 +24,8 @@
   <rect x="212" y="212" width="600" height="600" rx="24" fill="#12121E"/>
   
   <!-- 3x3 Box dividers (thick lines) -->
-  <!-- Vertical thick lines -->
   <rect x="410" y="212" width="4" height="600" fill="#6366F1" opacity="0.6"/>
   <rect x="610" y="212" width="4" height="600" fill="#6366F1" opacity="0.6"/>
-  
-  <!-- Horizontal thick lines -->
   <rect x="212" y="410" width="600" height="4" fill="#6366F1" opacity="0.6"/>
   <rect x="212" y="610" width="600" height="4" fill="#6366F1" opacity="0.6"/>
   
@@ -48,23 +45,12 @@
   <rect x="212" y="678" width="600" height="1.5" fill="#6366F1" opacity="0.15"/>
   <rect x="212" y="744" width="600" height="1.5" fill="#6366F1" opacity="0.15"/>
   
-  <!-- Numbers - given (white, bold) -->
+  <!-- Numbers - given (white, bold) — kept: 5, 3, 9 -->
   <text x="245" y="270" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">5</text>
   <text x="377" y="270" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">3</text>
-  <text x="511" y="336" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">8</text>
-  <text x="643" y="270" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">7</text>
-  <text x="245" y="470" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">6</text>
-  <text x="775" y="470" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">2</text>
-  <text x="311" y="670" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">1</text>
-  <text x="775" y="670" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">4</text>
   <text x="511" y="736" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="52" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">9</text>
   
-  <!-- Numbers - user entered (indigo/accent) -->
-  <text x="511" y="270" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="52" fill="#818CF8" text-anchor="middle" dominant-baseline="central">4</text>
-  <text x="377" y="470" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="52" fill="#818CF8" text-anchor="middle" dominant-baseline="central">9</text>
-  <text x="643" y="536" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="52" fill="#818CF8" text-anchor="middle" dominant-baseline="central">3</text>
-  
-  <!-- Highlighted/selected cell -->
+  <!-- Highlighted/selected cell with accent number -->
   <rect x="414" y="414" width="196" height="196" rx="8" fill="#6366F1" opacity="0.12"/>
   <text x="511" y="512" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="56" fill="#A5B4FC" text-anchor="middle" dominant-baseline="central">7</text>
   

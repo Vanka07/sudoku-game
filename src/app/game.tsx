@@ -48,6 +48,7 @@ function SudokuCell({
   col,
   isSelected,
   sameValue,
+  matchPulse,
   onPress,
   cellSize,
 }: {
@@ -56,6 +57,7 @@ function SudokuCell({
   col: number;
   isSelected: boolean;
   sameValue: boolean;
+  matchPulse: number; // increments when this cell should pulse (matching correct number)
   onPress: () => void;
   cellSize: number;
 }) {
@@ -64,6 +66,7 @@ function SudokuCell({
   const scale = useSharedValue(1);
   const correctPulse = useSharedValue(1);
   const correctGlow = useSharedValue(0);
+  const matchGlow = useSharedValue(0);
 
   const isBoxBorderRight = col === 2 || col === 5;
   const isBoxBorderBottom = row === 2 || row === 5;
@@ -84,12 +87,26 @@ function SudokuCell({
     }
   }, [cell.isCorrect]);
 
+  // Pulse matching cells when a correct number is placed
+  useEffect(() => {
+    if (matchPulse > 0) {
+      matchGlow.value = withSequence(
+        withTiming(1, { duration: 150 }),
+        withTiming(0, { duration: 500 })
+      );
+    }
+  }, [matchPulse]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value * correctPulse.value }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: correctGlow.value * 0.3,
+  }));
+
+  const matchGlowStyle = useAnimatedStyle(() => ({
+    opacity: matchGlow.value * 0.4,
   }));
 
   const handlePress = () => {
@@ -101,12 +118,13 @@ function SudokuCell({
     onPress();
   };
 
+  // Same-value now takes priority over row/col/box highlight
   const bgColor = isSelected
     ? colors.cellSelectedBg
+    : sameValue && cell.value !== 0
+    ? colors.cellSameValueBg
     : cell.isHighlighted
     ? colors.cellHighlightBg
-    : sameValue && cell.value !== 0
-    ? colors.cellSelectedBg
     : 'transparent';
 
   const textColor = cell.isError
@@ -159,6 +177,21 @@ function SudokuCell({
           ]}
         />
       )}
+      {/* Pulse glow for matching numbers when correct number placed */}
+      {sameValue && cell.value !== 0 && (
+        <Animated.View
+          style={[
+            matchGlowStyle,
+            {
+              position: 'absolute',
+              width: cellSize - 2,
+              height: cellSize - 2,
+              borderRadius: 6,
+              backgroundColor: colors.accentLight,
+            },
+          ]}
+        />
+      )}
       {cell.value !== 0 ? (
         <Text
           style={{
@@ -204,11 +237,20 @@ function SudokuBoard() {
   const board = useSudokuStore((s) => s.board);
   const selectedCell = useSudokuStore((s) => s.selectedCell);
   const selectCell = useSudokuStore((s) => s.selectCell);
+  const lastCorrectValue = useSudokuStore((s) => s.lastCorrectValue);
   const theme = useThemeStore((s) => s.theme);
   const colors = themes[theme];
   const { width } = useWindowDimensions();
   const boardSize = Math.min(width - BOARD_PADDING * 2, 500);
   const cellSize = boardSize / 9;
+
+  // Track pulse counter — increments each time a correct number is placed
+  const pulseCounter = useRef(0);
+  const prevCorrectValue = useRef(0);
+  if (lastCorrectValue !== 0 && lastCorrectValue !== prevCorrectValue.current) {
+    pulseCounter.current++;
+    prevCorrectValue.current = lastCorrectValue;
+  }
 
   const selectedValue = selectedCell
     ? board[selectedCell.row][selectedCell.col].value
@@ -230,20 +272,28 @@ function SudokuBoard() {
     >
       {board.map((row, rowIndex) => (
         <View key={rowIndex} style={{ flexDirection: 'row' }}>
-          {row.map((cell, colIndex) => (
-            <SudokuCell
-              key={`${rowIndex}-${colIndex}`}
-              cell={cell}
-              row={rowIndex}
-              col={colIndex}
-              isSelected={
-                selectedCell?.row === rowIndex && selectedCell?.col === colIndex
-              }
-              sameValue={selectedValue !== 0 && cell.value === selectedValue}
-              onPress={() => selectCell(rowIndex, colIndex)}
-              cellSize={cellSize}
-            />
-          ))}
+          {row.map((cell, colIndex) => {
+            // Pulse matching cells when correct number was just placed
+            const shouldPulse =
+              lastCorrectValue !== 0 &&
+              cell.value === lastCorrectValue &&
+              !(selectedCell?.row === rowIndex && selectedCell?.col === colIndex);
+            return (
+              <SudokuCell
+                key={`${rowIndex}-${colIndex}`}
+                cell={cell}
+                row={rowIndex}
+                col={colIndex}
+                isSelected={
+                  selectedCell?.row === rowIndex && selectedCell?.col === colIndex
+                }
+                sameValue={selectedValue !== 0 && cell.value === selectedValue}
+                matchPulse={shouldPulse ? pulseCounter.current : 0}
+                onPress={() => selectCell(rowIndex, colIndex)}
+                cellSize={cellSize}
+              />
+            );
+          })}
         </View>
       ))}
     </Animated.View>
@@ -386,9 +436,8 @@ function ActionButton({
 
   return (
     <AnimatedPressable
-      style={animatedStyle}
+      style={[animatedStyle, { alignItems: 'center', marginHorizontal: 12 }]}
       onPress={handlePress}
-      style={{ alignItems: 'center', marginHorizontal: 12 }}
       accessibilityLabel={`${label}${badge !== undefined && badge > 0 ? `, ${badge} remaining` : ''}${isActive ? ', active' : ''}`}
       accessibilityRole="button"
     >

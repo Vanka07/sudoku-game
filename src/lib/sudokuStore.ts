@@ -51,6 +51,7 @@ interface HistoryEntry {
 
 interface SudokuStore extends GameState {
   history: HistoryEntry[];
+  lastCorrectValue: number; // triggers matching-number highlight pulse
   selectCell: (row: number, col: number) => void;
   enterNumber: (num: number) => void;
   clearCell: () => void;
@@ -377,6 +378,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
   noteMode: false,
   stats: initialStats,
   history: [] as HistoryEntry[],
+  lastCorrectValue: 0,
   isDailyChallenge: false,
   dailyChallenge: initialDailyChallenge,
 
@@ -451,7 +453,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       }))
     );
 
-    set({ selectedCell: { row, col }, board: newBoard });
+    set({ selectedCell: { row, col }, board: newBoard, lastCorrectValue: 0 });
   },
 
   // ── Number entry ────────────────────────────────────────────────────────
@@ -503,6 +505,9 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
       } else {
         newBoard[row][col].isError = false;
         newBoard[row][col].isCorrect = true;
+
+        // Trigger matching-number highlight pulse
+        set({ lastCorrectValue: num });
 
         // Remove this number from notes in same row/col/box
         for (let i = 0; i < 9; i++) {

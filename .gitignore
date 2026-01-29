@@ -50,3 +50,6 @@ expo.log
 dist/
 *.zip
 sudoku-web-deploy.zip
+
+# Local Netlify folder
+.netlify
