@@ -184,8 +184,8 @@ function Logo() {
   const colors = themes[theme];
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} style={{ alignItems: 'center', marginBottom: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+    <Animated.View entering={FadeInDown.delay(100).springify()} style={{ alignItems: 'center', marginBottom: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
         <View
           style={{
             width: 56,
@@ -268,7 +268,7 @@ function DifficultyButton({
         <View
           style={{
             paddingHorizontal: 24,
-            paddingVertical: 14,
+            paddingVertical: 10,
             borderRadius: 16,
             flexDirection: 'row',
             alignItems: 'center',
@@ -469,7 +469,7 @@ function DailyChallengeCard({ onPress, screenWidth }: { onPress: () => void; scr
             width: Math.min(screenWidth - 64, 500),
             padding: 12,
             borderRadius: 14,
-            marginBottom: 14,
+            marginBottom: 8,
             borderWidth: 1,
             borderColor: dailyChallenge.completed
               ? (theme === 'dark' ? '#10B981' : '#34D399')
@@ -636,7 +636,7 @@ export default function HomeScreen() {
             <Logo />
 
             {/* Spacer */}
-            <View style={{ height: 12 }} />
+            <View style={{ height: 4 }} />
 
             {/* Continue Game button (shown when a game is in progress) */}
             {isPlaying && (
@@ -647,11 +647,11 @@ export default function HomeScreen() {
                     handleResumeGame();
                   }}
                   style={{
-                    maxWidth: width - 64,
-                    width: '100%',
-                    paddingVertical: 14,
+                    width: Math.min(width - 64, 500),
+                    paddingVertical: 12,
                     borderRadius: 14,
                     alignItems: 'center',
+                    justifyContent: 'center',
                     backgroundColor: colors.accentBg,
                     borderWidth: 1,
                     borderColor: colors.accentBorder,
@@ -692,7 +692,7 @@ export default function HomeScreen() {
               </Text>
             </Animated.View>
 
-            <View style={{ gap: 10, marginBottom: 32 }}>
+            <View style={{ gap: 6, marginBottom: 16 }}>
               {difficulties.map((diff, index) => (
                 <DifficultyButton
                   key={diff}
@@ -706,12 +706,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View style={{ marginBottom: 40 }}>
+            <View style={{ marginBottom: 16 }}>
               <PlayButton onPress={handleStartGame} />
             </View>
 
             {/* Stats */}
-            <View style={{ width: '100%', flexDirection: 'row', paddingHorizontal: 8, marginBottom: 16 }}>
+            <View style={{ width: '100%', flexDirection: 'row', paddingHorizontal: 8, marginBottom: 8 }}>
               <StatCard
                 label="Games Won"
                 value={stats.gamesWon}
