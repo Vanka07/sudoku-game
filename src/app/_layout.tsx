@@ -77,7 +77,7 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
-    return <View className="flex-1 bg-[#050508]" />;
+    return <View style={{ flex: 1, backgroundColor: '#050508' }} />;
   }
 
   return (

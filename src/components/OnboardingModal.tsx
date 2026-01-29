@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Dimensions, Modal } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   FadeIn,
@@ -16,8 +16,6 @@ import Animated, {
 import { Grid3x3, Hash, Wrench } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useThemeStore, themes } from '@/lib/themeStore';
-
-const { width } = Dimensions.get('window');
 const ONBOARDING_KEY = 'hasSeenOnboarding';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -101,6 +99,8 @@ export function OnboardingModal({
   const buttonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
+
+  const { width } = useWindowDimensions();
 
   if (!visible) return null;
 

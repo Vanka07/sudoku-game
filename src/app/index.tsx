@@ -52,8 +52,12 @@ function ThemeToggle() {
       accessibilityRole="button"
     >
       <View
-        className="w-11 h-11 rounded-full items-center justify-center"
         style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: colors.backgroundSecondary,
           borderWidth: 1,
           borderColor: colors.border,
@@ -95,8 +99,12 @@ function SettingsButton({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
     >
       <View
-        className="w-11 h-11 rounded-full items-center justify-center"
         style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: colors.backgroundSecondary,
           borderWidth: 1,
           borderColor: colors.border,
@@ -154,7 +162,7 @@ function FloatingGrid({ delay, x, y, size, screenWidth }: { delay: number; x: nu
       ]}
     >
       {/* Simple grid pattern */}
-      <View className="flex-1 flex-row flex-wrap">
+      <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
         {Array(9).fill(0).map((_, i) => (
           <View
             key={i}
@@ -176,11 +184,15 @@ function Logo() {
   const colors = themes[theme];
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center mb-2">
-      <View className="flex-row items-center justify-center mb-2">
+    <Animated.View entering={FadeInDown.delay(100).springify()} style={{ alignItems: 'center', marginBottom: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
         <View
-          className="w-14 h-14 rounded-2xl items-center justify-center"
           style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: colors.accentBg,
             borderWidth: 1,
             borderColor: colors.accentBorder,
@@ -254,18 +266,22 @@ function DifficultyButton({
         accessibilityRole="button"
       >
         <View
-          className="px-6 py-3.5 rounded-2xl flex-row items-center justify-between"
           style={{
+            paddingHorizontal: 24,
+            paddingVertical: 14,
+            borderRadius: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             backgroundColor: isSelected ? `${config.color}15` : colors.backgroundSecondary,
             borderWidth: 1.5,
             borderColor: isSelected ? `${config.color}50` : colors.border,
             width: Math.min(screenWidth - 64, 500),
           }}
         >
-          <View className="flex-row items-center">
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View
-              className="w-3 h-3 rounded-full mr-4"
-              style={{ backgroundColor: config.color }}
+              style={{ width: 12, height: 12, borderRadius: 6, marginRight: 16, backgroundColor: config.color }}
             />
             <Text
               style={{
@@ -366,17 +382,19 @@ function StatCard({
   const colors = themes[theme];
 
   return (
-    <Animated.View entering={FadeInUp.delay(delay).springify()} className="flex-1 mx-1.5">
+    <Animated.View entering={FadeInUp.delay(delay).springify()} style={{ flex: 1, marginHorizontal: 6 }}>
       <View
-        className="rounded-xl p-3 items-center"
         style={{
+          borderRadius: 12,
+          padding: 12,
+          alignItems: 'center',
           backgroundColor: colors.backgroundSecondary,
           borderWidth: 1,
           borderColor: colors.borderLight,
         }}
         accessibilityLabel={`${label}: ${value}`}
       >
-        <View className="mb-1">{icon}</View>
+        <View style={{ marginBottom: 4 }}>{icon}</View>
         <Text
           style={{
             fontFamily: 'Rajdhani_700Bold',
@@ -458,11 +476,16 @@ function DailyChallengeCard({ onPress, screenWidth }: { onPress: () => void; scr
               : (theme === 'dark' ? '#6366F1' : '#818CF8'),
           }}
         >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center flex-1">
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
               <View
-                className="w-10 h-10 rounded-lg items-center justify-center mr-3"
                 style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
                   backgroundColor: dailyChallenge.completed
                     ? (theme === 'dark' ? '#10B98130' : '#10B98120')
                     : (theme === 'dark' ? '#6366F130' : '#6366F120'),
@@ -474,7 +497,7 @@ function DailyChallengeCard({ onPress, screenWidth }: { onPress: () => void; scr
                   <Calendar size={24} color={theme === 'dark' ? '#818CF8' : '#6366F1'} />
                 )}
               </View>
-              <View className="flex-1">
+              <View style={{ flex: 1 }}>
                 <Text
                   style={{
                     fontFamily: 'Rajdhani_700Bold',
@@ -507,8 +530,12 @@ function DailyChallengeCard({ onPress, screenWidth }: { onPress: () => void; scr
             {/* Streak badge */}
             {dailyChallenge.streak > 0 && (
               <View
-                className="flex-row items-center px-3 py-1.5 rounded-full"
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 9999,
                   backgroundColor: theme === 'dark' ? '#F59E0B20' : '#FEF3C7',
                 }}
               >
@@ -585,34 +612,35 @@ export default function HomeScreen() {
   const difficulties: Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Floating decorative grids */}
       <FloatingGrid delay={0} x={-40} y={80} size={120} screenWidth={width} />
       <FloatingGrid delay={500} x={width - 80} y={200} size={100} screenWidth={width} />
       <FloatingGrid delay={1000} x={30} y={500} size={80} screenWidth={width} />
       <FloatingGrid delay={1500} x={width - 120} y={600} size={140} screenWidth={width} />
 
-      <SafeAreaView className="flex-1">
+      <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, alignItems: 'center' }}
           showsVerticalScrollIndicator={false}
         >
+          <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center' }}>
           {/* Top bar: Settings + Theme Toggle */}
-          <View className="flex-row justify-end px-4 pt-2">
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingTop: 8 }}>
             <SettingsButton onPress={() => setShowSettings(true)} />
             <ThemeToggle />
           </View>
 
-          <View className="flex-1 items-center px-8 pb-4">
+          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 32, paddingBottom: 16 }}>
             {/* Logo */}
             <Logo />
 
             {/* Spacer */}
-            <View className="h-3" />
+            <View style={{ height: 12 }} />
 
             {/* Continue Game button (shown when a game is in progress) */}
             {isPlaying && (
-              <Animated.View entering={FadeInDown.delay(120).springify()} className="mb-3">
+              <Animated.View entering={FadeInDown.delay(120).springify()} style={{ marginBottom: 12 }}>
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -649,7 +677,7 @@ export default function HomeScreen() {
             <DailyChallengeCard onPress={handleStartDailyChallenge} screenWidth={width} />
 
             {/* Difficulty Selection */}
-            <Animated.View entering={FadeInDown.delay(200).springify()} className="mb-2">
+            <Animated.View entering={FadeInDown.delay(200).springify()} style={{ marginBottom: 8 }}>
               <Text
                 style={{
                   fontFamily: 'Rajdhani_500Medium',
@@ -664,7 +692,7 @@ export default function HomeScreen() {
               </Text>
             </Animated.View>
 
-            <View className="space-y-2.5 mb-8">
+            <View style={{ gap: 10, marginBottom: 32 }}>
               {difficulties.map((diff, index) => (
                 <DifficultyButton
                   key={diff}
@@ -678,12 +706,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View className="mb-10">
+            <View style={{ marginBottom: 40 }}>
               <PlayButton onPress={handleStartGame} />
             </View>
 
             {/* Stats */}
-            <View className="w-full flex-row px-2 mb-4">
+            <View style={{ width: '100%', flexDirection: 'row', paddingHorizontal: 8, marginBottom: 16 }}>
               <StatCard
                 label="Games Won"
                 value={stats.gamesWon}
@@ -717,6 +745,7 @@ export default function HomeScreen() {
             >
               Train your mind, one cell at a time
             </Text>
+          </View>
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -170,7 +170,7 @@ function SudokuCell({
           {cell.value}
         </Text>
       ) : cell.notes.length > 0 ? (
-        <View className="flex-row flex-wrap w-full h-full p-0.5">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: '100%', height: '100%', padding: 2 }}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
             <View
               key={n}
@@ -229,7 +229,7 @@ function SudokuBoard() {
       accessibilityLabel="Sudoku game board"
     >
       {board.map((row, rowIndex) => (
-        <View key={rowIndex} className="flex-row">
+        <View key={rowIndex} style={{ flexDirection: 'row' }}>
           {row.map((cell, colIndex) => (
             <SudokuCell
               key={`${rowIndex}-${colIndex}`}
@@ -288,8 +288,10 @@ function NumberButton({
       accessibilityRole="button"
     >
       <View
-        className="items-center justify-center mx-1"
         style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginHorizontal: 4,
           width: (Math.min(screenWidth, 532) - 64) / 9 - 2,
           height: 56,
           backgroundColor: isDisabled
@@ -386,13 +388,18 @@ function ActionButton({
     <AnimatedPressable
       style={animatedStyle}
       onPress={handlePress}
-      className="items-center mx-3"
+      style={{ alignItems: 'center', marginHorizontal: 12 }}
       accessibilityLabel={`${label}${badge !== undefined && badge > 0 ? `, ${badge} remaining` : ''}${isActive ? ', active' : ''}`}
       accessibilityRole="button"
     >
       <View
-        className="w-14 h-14 rounded-2xl items-center justify-center relative"
         style={{
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
           backgroundColor: isActive
             ? colors.accentBg
             : colors.backgroundSecondary,
@@ -405,8 +412,17 @@ function ActionButton({
         {icon}
         {badge !== undefined && badge > 0 && (
           <View
-            className="absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center"
-            style={{ backgroundColor: colors.accent }}
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.accent,
+            }}
           >
             <Text
               style={{
@@ -492,25 +508,23 @@ function Header() {
   const config = DIFFICULTY_CONFIG[difficulty];
 
   return (
-    <View style={{ paddingTop: insets.top + 8 }} className="px-4 pb-4">
-      <View className="flex-row items-center justify-between">
+    <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.back();
           }}
-          className="w-10 h-10 rounded-full items-center justify-center"
-          style={{ backgroundColor: colors.backgroundSecondary }}
+          style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary }}
           accessibilityLabel="Go home"
           accessibilityRole="button"
         >
           <Home size={20} color={colors.textMuted} />
         </Pressable>
 
-        <View className="flex-row items-center">
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View
-            className="px-3 py-1.5 rounded-full mr-3"
-            style={{ backgroundColor: `${config.color}20` }}
+            style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9999, marginRight: 12, backgroundColor: `${config.color}20` }}
           >
             <Text
               style={{
@@ -542,8 +556,7 @@ function Header() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             isPaused ? resumeGame() : pauseGame();
           }}
-          className="w-10 h-10 rounded-full items-center justify-center"
-          style={{ backgroundColor: colors.backgroundSecondary }}
+          style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary }}
           accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
           accessibilityRole="button"
         >
@@ -553,7 +566,7 @@ function Header() {
 
       {/* Mistakes indicator */}
       <View
-        className="flex-row justify-center mt-3"
+        style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12 }}
         accessibilityLabel={`${mistakes} of ${maxMistakes} mistakes`}
       >
         {Array(maxMistakes)
@@ -561,8 +574,11 @@ function Header() {
           .map((_, i) => (
             <View
               key={i}
-              className="w-2 h-2 rounded-full mx-1"
               style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                marginHorizontal: 4,
                 backgroundColor: i < mistakes ? '#EF4444' : colors.border,
               }}
             />
@@ -641,7 +657,7 @@ function Confetti() {
   }, [width]);
 
   return (
-    <View className="absolute inset-0 overflow-hidden pointer-events-none">
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none' }}>
       {pieces.map((piece) => (
         <ConfettiPiece key={piece.id} delay={piece.delay} x={piece.x} />
       ))}
@@ -678,15 +694,23 @@ function PauseOverlay() {
   return (
     <Animated.View
       entering={FadeIn.duration(200)}
-      className="absolute inset-0 items-center justify-center"
-      style={{ backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.95)' : 'rgba(248, 250, 252, 0.95)' }}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.95)' : 'rgba(248, 250, 252, 0.95)',
+      }}
     >
       <Pressable
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           resumeGame();
         }}
-        className="items-center"
+        style={{ alignItems: 'center' }}
         accessibilityLabel="Resume game"
         accessibilityRole="button"
       >
@@ -808,13 +832,22 @@ function VictoryModal() {
   return (
     <Animated.View
       entering={FadeIn.duration(300)}
-      className="absolute inset-0 items-center justify-center px-8"
-      style={{ backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.97)' : 'rgba(248, 250, 252, 0.97)' }}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+        backgroundColor: theme === 'dark' ? 'rgba(10, 10, 15, 0.97)' : 'rgba(248, 250, 252, 0.97)',
+      }}
     >
       {!isGameOver && <Confetti />}
 
       <Animated.View style={shakeStyle}>
-        <Animated.View entering={FadeInDown.delay(100).springify()} className="items-center">
+        <Animated.View entering={FadeInDown.delay(100).springify()} style={{ alignItems: 'center' }}>
           {/* Trophy or X icon */}
           {!isGameOver ? (
             <Animated.View
@@ -878,8 +911,8 @@ function VictoryModal() {
                 You solved it in {formatTime(elapsedTime)}
               </Text>
 
-              <View className="flex-row mb-8">
-                <View className="items-center mx-4">
+              <View style={{ flexDirection: 'row', marginBottom: 32 }}>
+                <View style={{ alignItems: 'center', marginHorizontal: 16 }}>
                   <Text
                     style={{
                       fontFamily: 'Rajdhani_700Bold',
@@ -899,7 +932,7 @@ function VictoryModal() {
                   TIME
                 </Text>
               </View>
-              <View className="items-center mx-4">
+              <View style={{ alignItems: 'center', marginHorizontal: 16 }}>
                 <Text
                   style={{
                     fontFamily: 'Rajdhani_700Bold',
@@ -923,14 +956,17 @@ function VictoryModal() {
           </>
         )}
 
-        <View className="flex-row">
+        <View style={{ flexDirection: 'row' }}>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.back();
             }}
-            className="px-6 py-4 rounded-xl mr-3"
             style={{
+              paddingHorizontal: 24,
+              paddingVertical: 16,
+              borderRadius: 12,
+              marginRight: 12,
               backgroundColor: colors.backgroundSecondary,
               borderWidth: 1,
               borderColor: colors.border,
@@ -952,8 +988,11 @@ function VictoryModal() {
           {!isGameOver && (
             <Pressable
               onPress={handleShare}
-              className="px-6 py-4 rounded-xl mr-3"
               style={{
+                paddingHorizontal: 24,
+                paddingVertical: 16,
+                borderRadius: 12,
+                marginRight: 12,
                 backgroundColor: colors.backgroundSecondary,
                 borderWidth: 1,
                 borderColor: colors.border,
@@ -961,7 +1000,7 @@ function VictoryModal() {
               accessibilityLabel="Share your score"
               accessibilityRole="button"
             >
-              <View className="flex-row items-center">
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Share2 size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
                 <Text
                   style={{
@@ -981,8 +1020,10 @@ function VictoryModal() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               startNewGame(difficulty);
             }}
-            className="px-6 py-4 rounded-xl"
             style={{
+              paddingHorizontal: 24,
+              paddingVertical: 16,
+              borderRadius: 12,
               backgroundColor: colors.accent,
             }}
             accessibilityLabel="Start new game"
@@ -1030,10 +1071,10 @@ export default function GameScreen() {
   }, [isPlaying, isPaused]);
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
 
-      <View className="flex-1 items-center justify-center">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <SudokuBoard />
         <NumberPad />
         <ActionBar />
