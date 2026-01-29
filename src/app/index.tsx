@@ -188,9 +188,9 @@ function Logo() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
         <View
           style={{
-            width: 56,
-            height: 56,
-            borderRadius: 16,
+            width: 48,
+            height: 48,
+            borderRadius: 14,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accentBg,
@@ -204,7 +204,7 @@ function Logo() {
       <Text
         style={{
           fontFamily: 'Rajdhani_700Bold',
-          fontSize: 38,
+          fontSize: 32,
           color: colors.text,
           letterSpacing: 6,
         }}
@@ -386,7 +386,7 @@ function StatCard({
       <View
         style={{
           borderRadius: 12,
-          padding: 12,
+          padding: 8,
           alignItems: 'center',
           backgroundColor: colors.backgroundSecondary,
           borderWidth: 1,
@@ -706,12 +706,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Play Button */}
-            <View style={{ marginBottom: 24 }}>
+            <View style={{ marginBottom: 16 }}>
               <PlayButton onPress={handleStartGame} />
             </View>
 
             {/* Stats */}
-            <View style={{ width: '100%', flexDirection: 'row', paddingHorizontal: 8, marginBottom: 8 }}>
+            <View style={{ width: '100%', flexDirection: 'row', paddingHorizontal: 8, marginBottom: 4 }}>
               <StatCard
                 label="Games Won"
                 value={stats.gamesWon}
@@ -732,19 +732,7 @@ export default function HomeScreen() {
               />
             </View>
 
-            {/* Footer */}
-            <Text
-              style={{
-                fontFamily: 'Rajdhani_400Regular',
-                fontSize: 12,
-                color: colors.textDimmer,
-                textAlign: 'center',
-                marginTop: 4,
-                marginBottom: 8,
-              }}
-            >
-              Train your mind, one cell at a time
-            </Text>
+            {/* Footer removed to save space */}
           </View>
           </View>
         </ScrollView>
