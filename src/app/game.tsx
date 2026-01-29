@@ -336,7 +336,7 @@ function NumberPad() {
   return (
     <Animated.View
       entering={FadeInUp.delay(200).springify()}
-      className="flex-row justify-center mt-4"
+      style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}
       accessibilityLabel="Number pad"
     >
       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
@@ -447,7 +447,7 @@ function ActionBar() {
   return (
     <Animated.View
       entering={FadeInUp.delay(300).springify()}
-      className="flex-row justify-center mt-6"
+      style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 24 }}
       accessibilityLabel="Game actions"
     >
       <ActionButton
