@@ -665,7 +665,7 @@ export const useSudokuStore = create<SudokuStore>((set, get) => ({
     const lastState = history[history.length - 1];
     set({
       board: lastState.board,
-      mistakes: lastState.mistakes,
+      // mistakes are permanent — undo restores the board but not the mistake count
       history: history.slice(0, -1),
     });
     get().saveGameState();
